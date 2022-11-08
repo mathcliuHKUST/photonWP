@@ -22,6 +22,8 @@ module global_data
     integer :: method_scheme ! 1 wp, 2 sn
     integer :: method_interp !interpolation method
     integer :: method_output !output as cell centered or point value
+    character(20) :: inputfilename
+    character(20) :: outputfilename
 
     !--------------------------------------------------
     !gas properties
@@ -54,12 +56,15 @@ module global_data
     integer,parameter :: FIRST_ORDER  = 0 !first order interpolation
     integer,parameter :: SECOND_ORDER = 1 !second order interpolation
     !group
-    integer,parameter :: inner1   = -1
-    integer,parameter :: inner2   = -2
-    integer,parameter :: ghost1   = -3
-    integer,parameter :: ghost2   = -4
-    integer,parameter :: inner    = -5
-    integer,parameter :: boundary = -6
+    integer,parameter :: cell01 = -1
+    integer,parameter :: cell02 = -2
+    integer,parameter :: cell11 = -3
+    integer,parameter :: cell12 = -4
+    integer,parameter :: cell13 = -5
+    integer,parameter :: face0  = -6
+    integer,parameter :: face1  = -7
+    integer,parameter :: node0  = -8
+    integer,parameter :: node1  = -9
 
     !--------------------------------------------------
     !basic derived type

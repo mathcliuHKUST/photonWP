@@ -11,6 +11,7 @@ program main
     !initialization
     call init()
     call output()
+    stop
 
     !open file and write header
     open(unit=HSTFILE,file=HSTFILENAME,status="replace",action="write") !open history file

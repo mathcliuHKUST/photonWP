@@ -34,14 +34,14 @@ contains
         !$omp parallel
         !$omp do
         do i=1,face_number
-            if(face(i)%group==inner)then
+            if(face(i)%group==face1)then
                 call calc_flux(face(i))
             endif
         end do
         !$omp end do nowait
         !!$omp do
         !do i=1,face_number
-        !	if(face(i)%group==boundary)then
+        !	if(face(i)%group==face0)then
         !		call calc_flux_boundary(face(i))
         !	endif
         !end do
@@ -58,7 +58,7 @@ contains
         !$omp parallel
         !$omp do
         do i=1,cell_number
-            if(ctr(i)%group==inner1 .or. ctr(i)%group==inner2)then
+            if(ctr(i)%group==cell11 .or. ctr(i)%group==cell12 .or. ctr(i)%group==cell13)then
                 call update_flux(ctr(i),i)
             endif
         end do
@@ -75,7 +75,7 @@ contains
         !$omp parallel
         !$omp do
         do i=1,cell_number
-            if(ctr(i)%group==inner1 .or. ctr(i)%group==inner2)then
+            if(ctr(i)%group==cell11 .or. ctr(i)%group==cell12 .or. ctr(i)%group==cell13)then
                 call update_source(ctr(i))
             endif
         end do

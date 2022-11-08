@@ -98,7 +98,7 @@ contains
                 ctr(i)%kappa_effective=ctr(i)%kappa*flux_limiter(i)
             enddo
             do i=1,face_number
-                if(face(i)%group==inner)then
+                if(face(i)%group==face1)then
                     !face(i)%kappa=2.0d0*(ctr(face(i)%cell_id(1))%kappa_effective*ctr(face(i)%cell_id(2))%kappa_effective)/&
                     !    sum(ctr(face(i)%cell_id(1:2))%kappa_effective)
                     face(i)%kappa=max(ctr(face(i)%cell_id(1))%kappa_effective,ctr(face(i)%cell_id(2))%kappa_effective)
@@ -221,7 +221,7 @@ contains
                     if(cell_id/=0)then
                         matrix_implicit(i,i)=matrix_implicit(i,i)+&
                             dt/ctr(i)%area*face(face_id)%length*face(face_id)%weight(1)*face(face_id)%kappa
-                        if(ctr(cell_id)%group==inner1 .or. ctr(cell_id)%group==inner2)then
+                        if(ctr(cell_id)%group==cell11 .or. ctr(cell_id)%group==cell12 .or. ctr(cell_id)%group==cell13)then
                             matrix_implicit(i,cell_id)=matrix_implicit(i,cell_id)-&
                                 dt/ctr(i)%area*face(face_id)%length*face(face_id)%weight(1)*face(face_id)%kappa
                         else
@@ -234,7 +234,7 @@ contains
                     node_id=face(face_id)%node_id(1)
                     do k=1,node(node_id)%cell_number
                         cell_id=node(node_id)%cell_id(k)
-                        if(ctr(cell_id)%group==inner1 .or. ctr(cell_id)%group==inner2)then
+                        if(ctr(cell_id)%group==cell11 .or. ctr(cell_id)%group==cell12 .or. ctr(cell_id)%group==cell13)then
                             matrix_implicit(i,cell_id)=matrix_implicit(i,cell_id)+&
                                 dt/ctr(i)%area*face(face_id)%length*face(face_id)%weight(2)*face(face_id)%kappa/node(node_id)%cell_number
                         else
@@ -245,7 +245,7 @@ contains
                     node_id=face(face_id)%node_id(2)
                     do k=1,node(node_id)%cell_number
                         cell_id=node(node_id)%cell_id(k)
-                        if(ctr(cell_id)%group==inner1 .or. ctr(cell_id)%group==inner2)then
+                        if(ctr(cell_id)%group==cell11 .or. ctr(cell_id)%group==cell12 .or. ctr(cell_id)%group==cell13)then
                             matrix_implicit(i,cell_id)=matrix_implicit(i,cell_id)-&
                                 dt/ctr(i)%area*face(face_id)%length*face(face_id)%weight(2)*face(face_id)%kappa/node(node_id)%cell_number
                         else
@@ -259,7 +259,7 @@ contains
                     if(cell_id/=0)then
                         matrix_implicit(i,i)=matrix_implicit(i,i)+&
                             dt/ctr(i)%area*face(face_id)%length*face(face_id)%weight(1)*face(face_id)%kappa
-                        if(ctr(cell_id)%group==inner1 .or. ctr(cell_id)%group==inner2)then
+                        if(ctr(cell_id)%group==cell11 .or. ctr(cell_id)%group==cell12 .or. ctr(cell_id)%group==cell13)then
                             matrix_implicit(i,cell_id)=matrix_implicit(i,cell_id)-&
                                 dt/ctr(i)%area*face(face_id)%length*face(face_id)%weight(1)*face(face_id)%kappa
                         else
@@ -272,7 +272,7 @@ contains
                     node_id=face(face_id)%node_id(1)
                     do k=1,node(node_id)%cell_number
                         cell_id=node(node_id)%cell_id(k)
-                        if(ctr(cell_id)%group==inner1 .or. ctr(cell_id)%group==inner2)then
+                        if(ctr(cell_id)%group==cell11 .or. ctr(cell_id)%group==cell12 .or. ctr(cell_id)%group==cell13)then
                             matrix_implicit(i,cell_id)=matrix_implicit(i,cell_id)-&
                                 dt/ctr(i)%area*face(face_id)%length*face(face_id)%weight(2)*face(face_id)%kappa/node(node_id)%cell_number
                         else
@@ -283,7 +283,7 @@ contains
                     node_id=face(face_id)%node_id(2)
                     do k=1,node(node_id)%cell_number
                         cell_id=node(node_id)%cell_id(k)
-                        if(ctr(cell_id)%group==inner1 .or. ctr(cell_id)%group==inner2)then
+                        if(ctr(cell_id)%group==cell11 .or. ctr(cell_id)%group==cell12 .or. ctr(cell_id)%group==cell13)then
                             matrix_implicit(i,cell_id)=matrix_implicit(i,cell_id)+&
                                 dt/ctr(i)%area*face(face_id)%length*face(face_id)%weight(2)*face(face_id)%kappa/node(node_id)%cell_number
                         else

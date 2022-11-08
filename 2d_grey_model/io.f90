@@ -21,6 +21,8 @@ contains
         radconst   = 0.01372d0
         ref_number = 10000
         ref_weight = 1.0d0
+        inputfilename ='tophat.msh'
+        outputfilename='tophat.plt'
 
         !method
         method_scheme = UGKWP
@@ -40,7 +42,7 @@ contains
     subroutine init_geometry()
         type(cell_type),allocatable,dimension(:) :: ctr_temp
         real(kind=double) :: tangent(2),normal(2),center(2)
-        real(kind=double) :: tempcosine
+        real(kind=double) :: tempcosine,innerproduct
         integer :: boundary_face_number
         integer :: element_number,element_id,element_type,group
         integer :: node_id1,node_id2,node_id3,node_id
@@ -49,13 +51,11 @@ contains
         integer :: sort
         character(30) :: cline
         integer :: fileunit
-        character(10) :: filename
         integer :: cell_number2,boundary_face_number2
 
         !node information
         fileunit=20
-        filename='input.msh'
-        open(unit = fileunit, file = filename, status = 'old')
+        open(unit = fileunit, file = inputfilename, status = 'old')
         do while(.true.)
             read(fileunit,*) cline
             cline = trim(cline)
@@ -64,14 +64,14 @@ contains
         read(fileunit,*) node_number
         allocate(node(1:node_number))
         do i = 1, node_number
-            node(i)%group=inner
+            node(i)%group=node1
             read(fileunit,*) temp,node(i)%coords(1),node(i)%coords(2)
             node(i)%cell_number=0
         end do
         close(unit = 20)
 
         !cell number, boundary number
-        open(unit = fileunit, file = filename, status = 'old')
+        open(unit = fileunit, file = inputfilename, status = 'old')
         do while(.true.)
             read(fileunit,*) cline
             cline = trim(cline)
@@ -85,7 +85,7 @@ contains
             read(fileunit,*) element_id,element_type,temp,group
             if(element_type==2)then
                 cell_number=cell_number+1
-                if(group==31)then
+                if(group==311 .or. group==312)then
                     cell_number_inner=cell_number_inner+1
                 endif
             elseif(element_type==1)then
@@ -113,7 +113,7 @@ contains
             ctr_temp(i)%capacity=0
             ctr_temp(i)%absorbtion=0
         enddo
-        open(unit = 20, file = 'input.msh', status = 'old')
+        open(unit = 20, file = inputfilename, status = 'old')
         do while(.true.)
             read(fileunit,*) cline
             cline = trim(cline)
@@ -126,12 +126,14 @@ contains
             if(i>(element_number-cell_number))then
                 j=j+1
                 read(fileunit,*) element_id,element_type,temp,group,temp,node_id1,node_id2,node_id3
-                if(group==31)then
-                    ctr_temp(j)%group=inner1
-                elseif(group==32)then
-                    ctr_temp(j)%group=ghost1
-                elseif(group==33)then
-                    ctr_temp(j)%group=ghost2
+                if(group==311)then
+                    ctr_temp(j)%group=cell11
+                elseif(group==312)then
+                    ctr_temp(j)%group=cell12
+                elseif(group==321)then
+                    ctr_temp(j)%group=cell01
+                elseif(group==322)then
+                    ctr_temp(j)%group=cell02
                 else
                     write(*,*) "reading cell information error..."
                     pause
@@ -169,7 +171,7 @@ contains
         allocate(face(face_number))
         !cell interface
         do i=1,face_number
-            face(i)%group=inner
+            face(i)%group=face1
             face(i)%node_id(2)=0
             face(i)%cell_id(2)=0
             face(i)%coords(2)=0
@@ -252,10 +254,10 @@ contains
         !> pick boundary
         do i=1,face_number
             if(face(i)%cell_id(2)==0)then
-                face(i)%group=boundary
-                node(face(i)%node_id(1:2))%group=boundary
-                if(ctr_temp(face(i)%cell_id(1))%group==inner1)then
-                    ctr_temp(face(i)%cell_id(1))%group=inner2
+                face(i)%group=face0
+                node(face(i)%node_id(1:2))%group=node0
+                if(ctr_temp(face(i)%cell_id(1))%group==cell11 .or. ctr_temp(face(i)%cell_id(1))%group==cell12)then
+                    ctr_temp(face(i)%cell_id(1))%group=cell13
                 endif
             endif
         enddo
@@ -267,13 +269,19 @@ contains
         sort=0
         allocate(ctr(cell_number))
         do i=1,cell_number
-            if(ctr_temp(i)%group==inner1)then
+            if(ctr_temp(i)%group==cell11)then
                 sort=sort+1
                 ctr(sort)=ctr_temp(i)
             endif
         enddo
         do i=1,cell_number
-            if(ctr_temp(i)%group==inner2)then
+            if(ctr_temp(i)%group==cell12)then
+                sort=sort+1
+                ctr(sort)=ctr_temp(i)
+            endif
+        enddo
+        do i=1,cell_number
+            if(ctr_temp(i)%group==cell13)then
                 sort=sort+1
                 ctr(sort)=ctr_temp(i)
             endif
@@ -284,13 +292,13 @@ contains
             pause
         endif
         do i=1,cell_number
-            if(ctr_temp(i)%group==ghost1)then
+            if(ctr_temp(i)%group==cell01)then
                 sort=sort+1
                 ctr(sort)=ctr_temp(i)
             endif
         enddo
         do i=1,cell_number
-            if(ctr_temp(i)%group==ghost2)then
+            if(ctr_temp(i)%group==cell02)then
                 sort=sort+1
                 ctr(sort)=ctr_temp(i)
             endif
@@ -306,7 +314,7 @@ contains
                 node_id=ctr(i)%node_id(j)
                 node(node_id)%cell_number=node(node_id)%cell_number+1
                 node(node_id)%cell_id(node(node_id)%cell_number)=i
-                if(node(node_id)%group==boundary)then
+                if(node(node_id)%group==node0)then
                     node(node_id)%cell_number=node(node_id)%cell_number+1
                     node(node_id)%cell_id(node(node_id)%cell_number)=i
                 endif
@@ -316,7 +324,7 @@ contains
         !face information
         !cell interface
         do i=1,face_number
-            face(i)%group=inner
+            face(i)%group=face1
             face(i)%node_id(2)=0
             face(i)%cell_id(2)=0
             face(i)%coords(2)=0
@@ -399,14 +407,14 @@ contains
         !> check boundary
         do i=1,face_number
             if(face(i)%cell_id(2)==0)then
-                face(i)%group=boundary
-                if(node(face(i)%node_id(1))%group/=boundary .or.&
-                    node(face(i)%node_id(2))%group/=boundary)then
+                face(i)%group=face0
+                if(node(face(i)%node_id(1))%group/=node0 .or.&
+                    node(face(i)%node_id(2))%group/=node0)then
                     write(*,*) "error: face boundary 2 ..."
                 endif
-                if(ctr(face(i)%cell_id(1))%group/= inner2 .and. &
-                    ctr(face(i)%cell_id(1))%group/= ghost1 .and. &
-                    ctr(face(i)%cell_id(1))%group/= ghost2)then
+                if(ctr(face(i)%cell_id(1))%group/= cell13 .and. &
+                    ctr(face(i)%cell_id(1))%group/= cell01 .and. &
+                    ctr(face(i)%cell_id(1))%group/= cell02)then
                     write(*,*) "error: face boundary 3 ..."
                 endif
             endif
@@ -428,8 +436,8 @@ contains
                 !> normal direction center2-->center1
                 normal(1)=tangent(2)
                 normal(2)=-tangent(1)
-                temp=sum(normal(1:2)*(ctr(face(i)%cell_id(1))%coords(1:2)-face(i)%coords(1:2)))
-                if(temp>0)then
+                innerproduct=sum(normal(1:2)*(ctr(face(i)%cell_id(1))%coords(1:2)-face(i)%coords(1:2)))
+                if(innerproduct<0)then
                     face(i)%cosx = -normal(1)
                     face(i)%cosy = -normal(2)
                     face(i)%norm(1:2) = -normal(1:2)
@@ -447,11 +455,14 @@ contains
                 ! sec(theta_ij)/|cj-ci|
                 face(i)%weight(1)=1.0d0/tempcosine/sqrt(sum((ctr(face(i)%cell_id(1))%coords(1:2)-ctr(face(i)%cell_id(2))%coords(1:2))**2.0d0))
                 !tan(theta_ij)/|vj-vi|
-                face(i)%weight(2)=sum((normal-center/tempcosine)*tangent)
+                face(i)%weight(2)=sum((face(i)%norm-center/tempcosine)*tangent)
                 !write(*,*) (normal-center/tempcosine)/sqrt(sum((normal-center/tempcosine)**2.0d0)),tangent
-                if(((normal(1)-center(1)/tempcosine)*tangent(2)-(normal(2)-center(2)/tempcosine)*tangent(1))>1.0d-10)then
+                if(((face(i)%norm(1)-center(1)/tempcosine)*tangent(2)-(face(i)%norm(2)-center(2)/tempcosine)*tangent(1))>1.0d-10)then
                     write(*,*) "error in weight 2: not parallel", &
-                        ((normal(1)-center(1)/tempcosine)*tangent(2)-(normal(2)-center(2)/tempcosine)*tangent(1))
+                        ((face(i)%norm(1)-center(1)/tempcosine)*tangent(2)-(face(i)%norm(2)-center(2)/tempcosine)*tangent(1)),&
+                        (face(i)%norm-center/tempcosine),&
+                        tangent
+                    pause
                 endif
                 !check bug
                 if(abs(tempcosine)>(1.0d0+1.0d-10))then
@@ -472,7 +483,7 @@ contains
         enddo
         boundary_face_number2=0
         do i=1,face_number
-            if(face(i)%group==boundary)then
+            if(face(i)%group==face0)then
                 boundary_face_number2=boundary_face_number2+1
             endif
         enddo
@@ -482,9 +493,9 @@ contains
         endif
         cell_number2=0
         do i=1,node_number
-            if(node(i)%group==inner)then
+            if(node(i)%group==node1)then
                 cell_number2=cell_number2+node(i)%cell_number
-            elseif(node(i)%group==boundary)then
+            elseif(node(i)%group==node0)then
                 cell_number2=cell_number2+node(i)%cell_number/2.0d0
             else
                 write(*,*) "node type unfinished..."
@@ -562,7 +573,7 @@ contains
 
         !initial condition
         do i=1,cell_number
-            if(ctr(i)%group==inner1 .or. ctr(i)%group==inner2)then
+            if(ctr(i)%group==cell11 .or. ctr(i)%group==cell12 .or. ctr(i)%group==cell13)then
                 ctr(i)%T          = 1.0d-6
                 ctr(i)%phi        = radconst*lightspeed*ctr(i)%T**4.0d0
                 ctr(i)%rho        = radconst*lightspeed*ctr(i)%T**4.0d0
@@ -570,7 +581,7 @@ contains
                 ctr(i)%h          = ctr(i)%rho/(4.0d0*pi)
                 ctr(i)%sh         = 0.0d0
                 ctr(i)%WaveParticleRatio=0.0d0
-            elseif(ctr(i)%group==ghost1)then
+            elseif(ctr(i)%group==cell01)then
                 ctr(i)%T          = 1.0d0
                 ctr(i)%phi        = radconst*lightspeed*ctr(i)%T**4.0d0
                 ctr(i)%rho        = radconst*lightspeed*ctr(i)%T**4.0d0
@@ -578,7 +589,7 @@ contains
                 ctr(i)%h          = ctr(i)%rho/(4.0d0*pi)
                 ctr(i)%sh         = 0.0d0
                 ctr(i)%WaveParticleRatio=0.0d0
-            elseif(ctr(i)%group==ghost2)then
+            elseif(ctr(i)%group==cell02)then
                 ctr(i)%T          = 1.0d-6
                 ctr(i)%phi        = radconst*lightspeed*ctr(i)%T**4.0d0
                 ctr(i)%rho        = radconst*lightspeed*ctr(i)%T**4.0d0
@@ -708,12 +719,12 @@ contains
     !--------------------------------------------------
     subroutine output()
         character(len=10) :: outfilename0
-        character(len=20) :: outfilename
+        character(len=20) :: outfilename1
         integer :: i,j
 
         write(outfilename0,'(I10.10)') iteration
-        outfilename=trim(outfilename0)//'output.plt'
-        open(unit = 21, file = outfilename, status = 'replace')
+        outfilename1=trim(outfilename0)//trim(outputfilename)
+        open(unit = 21, file = outfilename1, status = 'replace')
         write(21,'(a)') 'VARIABLES=X,Y,rho,T,kappa,ParticlePercentage'
         write(21,*) 'ZONE N=',node_number,',E=',cell_number,',datapacking=block'
         write(21,'(a)') 'varlocation=([3-6]=cellcentered)'
