@@ -15,14 +15,14 @@ contains
         dt         = 1.0d99
         sim_time   = 0.0d0
         end_time   = 100.0d0 
-        cfl        = 0.2d0
+        cfl        = 10.0d0
         kn         = 1.0d0
         lightspeed = 29.98d0
         radconst   = 0.01372d0
         ref_number = 50000
         ref_weight = 1.0d0
-        inputfilename ='marshak.msh'
-        outputfilename='marshak.plt'
+        inputfilename ='tophat.msh'
+        outputfilename='tophat.plt'
 
         !method
         method_scheme = SN
@@ -86,7 +86,7 @@ contains
             read(fileunit,*) element_id,element_type,temp,group
             if(element_type==2)then
                 cell_number=cell_number+1
-                if(group==31)then
+                if(group==311 .or. group==312)then
                     cell_number_inner=cell_number_inner+1
                 endif
             elseif(element_type==1)then
@@ -127,13 +127,13 @@ contains
             if(i>(element_number-cell_number))then
                 j=j+1
                 read(fileunit,*) element_id,element_type,temp,group,temp,node_id1,node_id2,node_id3
-                if(group==31)then
+                if(group==311)then
                     ctr_temp(j)%group=cell11
                 elseif(group==312)then
                     ctr_temp(j)%group=cell12
-                elseif(group==32)then
+                elseif(group==321)then
                     ctr_temp(j)%group=cell01
-                elseif(group==33)then
+                elseif(group==322)then
                     ctr_temp(j)%group=cell02
                 else
                     write(*,*) "reading cell information error..."
@@ -596,7 +596,7 @@ contains
             if(ctr(i)%group==cell11 .or. ctr(i)%group==cell12 .or.&
                ctr(i)%group==cell13 .or. ctr(i)%group==cell14 .or.&
                ctr(i)%group==cell02)then
-                ctr(i)%T          = 1.0d-6
+                ctr(i)%T          = 5.0d-2
                 ctr(i)%phi        = radconst*lightspeed*ctr(i)%T**4.0d0
                 ctr(i)%rho        = radconst*lightspeed*ctr(i)%T**4.0d0
                 ctr(i)%rho_wave   = ctr(i)%rho
@@ -604,7 +604,7 @@ contains
                 ctr(i)%sh         = 0.0d0
                 ctr(i)%WaveParticleRatio=0.0d0
             elseif(ctr(i)%group==cell01)then
-                ctr(i)%T          = 1.0d0
+                ctr(i)%T          = 5.0d-1
                 ctr(i)%phi        = radconst*lightspeed*ctr(i)%T**4.0d0
                 ctr(i)%rho        = radconst*lightspeed*ctr(i)%T**4.0d0
                 ctr(i)%rho_wave   = ctr(i)%rho
@@ -778,13 +778,17 @@ contains
     !--------------------------------------------------
     !>write result
     !--------------------------------------------------
-    subroutine output4()
+    subroutine output2()
+        character(len=10) :: outfilename0
+        character(len=100) :: outfilename1
         integer :: i,j
 
-        open(unit = 21, file = 'output.plt', status = 'replace')
-        write(21,'(a)') 'VARIABLES=X,Y,rho,T'
-        write(21,*) 'ZONE N=',node_number*4,',E=',cell_number*4,',datapacking=block'
-        write(21,'(a)') 'varlocation=([3-4]=cellcentered)'
+        write(outfilename0,'(I10.10)') iteration
+        outfilename1=trim(outfilename0)//trim(outputfilename)
+        open(unit = 21, file = outfilename1, status = 'replace')
+        write(21,'(a)') 'VARIABLES=X,Y,rho,T,kappa,ParticlePercentage'
+        write(21,*) 'ZONE N=',node_number*2,',E=',cell_number_inner*2,',datapacking=block'
+        write(21,'(a)') 'varlocation=([3-6]=cellcentered)'
         write(21,'(a)') 'ZONETYPE=FETRIANGLE'
 
         !node data
@@ -794,12 +798,6 @@ contains
         do i = 1, node_number
             write(21,*) node(i)%coords(1)
         end do
-        do i = 1, node_number
-            write(21,*) -node(i)%coords(1)
-        end do
-        do i = 1, node_number
-            write(21,*) -node(i)%coords(1)
-        end do
 
         do i = 1, node_number
             write(21,*) node(i)%coords(2)
@@ -807,30 +805,41 @@ contains
         do i = 1, node_number
             write(21,*) -node(i)%coords(2)
         end do
-        do i = 1, node_number
-            write(21,*) node(i)%coords(2)
-        end do
-        do i = 1, node_number
-            write(21,*) -node(i)%coords(2)
-        end do
 
-        do j=1,4
-            do i = 1, cell_number
-                write(21,*) ctr(i)%rho
-            enddo
+        do i = 1, cell_number_inner
+            write(21,*) ctr(i)%rho
+        enddo
+        do i = 1, cell_number_inner
+            write(21,*) ctr(i)%rho
         enddo
 
-        do j=1,4
-            do i = 1, cell_number
-                write(21,*) ctr(i)%T
-            enddo
+        do i = 1, cell_number_inner
+            write(21,*) ctr(i)%T
+        enddo
+        do i = 1, cell_number_inner
+            write(21,*) ctr(i)%T
         enddo
 
-        do j=1,4
-            do i = 1, cell_number
-                write(21,*) (j-1)*node_number+ctr(i)%node_id(1),(j-1)*node_number+ctr(i)%node_id(2),(j-1)*node_number+ctr(i)%node_id(3)
-            enddo
+        do i = 1, cell_number_inner
+            write(21,*) ctr(i)%kappa_effective
+        enddo
+        do i = 1, cell_number_inner
+            write(21,*) ctr(i)%kappa_effective
+        enddo
+
+        do i = 1, cell_number_inner
+            write(21,*) ctr(i)%WaveParticleRatio
+        enddo
+        do i = 1, cell_number_inner
+            write(21,*) ctr(i)%WaveParticleRatio
+        enddo
+
+        do i = 1, cell_number_inner
+            write(21,*) ctr(i)%node_id(1),ctr(i)%node_id(2),ctr(i)%node_id(3)
+        enddo
+        do i = 1, cell_number_inner
+            write(21,*) ctr(i)%node_id(1)+cell_number,ctr(i)%node_id(2)+cell_number,ctr(i)%node_id(3)+cell_number
         enddo
         close(unit = 21)
-    end subroutine output4
+    end subroutine output2
 end module io

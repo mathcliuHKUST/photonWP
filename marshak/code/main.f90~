@@ -22,14 +22,14 @@ program main
             !----------------------------------------------------------------------
             !> UGKWP method
             !----------------------------------------------------------------------
-            !> stream particle: free stream flux
-            call update_particle()
+            !!> stream particle: free stream flux
+            !call update_particle()
 
             !> source iteration: diffusive flux
             call source_iteration()
 
-            !> resample particle: microscopic closure
-            call reinit_particle()
+            !!> resample particle: microscopic closure
+            !call reinit_particle()
         elseif(method_scheme==SN)then
             !----------------------------------------------------------------------
             !> SN method

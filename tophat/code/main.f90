@@ -1,3 +1,4 @@
+!--------------------------------------------------
 !>main program
 !--------------------------------------------------
 program main
@@ -55,7 +56,7 @@ program main
             write(HSTFILE,"(I15,6E15.7)") iteration,sim_time,dt
         end if
         if (mod(iteration,100)==0) then
-            call output()
+            call output2()
         end if
 
         !----------------------------------------------------------------------
@@ -70,5 +71,5 @@ program main
     close(HSTFILE)
 
     !output solution
-    call output()
+    call output2()
 end program main

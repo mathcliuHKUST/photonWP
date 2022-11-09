@@ -14,17 +14,18 @@ contains
         iteration  = 1
         dt         = 1.0d99
         sim_time   = 0.0d0
-        end_time   = 1000.0d0
+        end_time   = 100.0d0 
         cfl        = 10.0d0
         kn         = 1.0d0
         lightspeed = 29.98d0
         radconst   = 0.01372d0
-        ref_number = 10000
+        ref_number = 50000
         ref_weight = 1.0d0
-        inputfilename ='tophat.msh'
-        outputfilename='tophat.plt'
+        inputfilename ='hohlraum.msh'
+        outputfilename='hohlraum.plt'
 
         !method
+        method_scheme = SN
         method_scheme = UGKWP
         method_interp = SECOND_ORDER !second order interpolation
 
@@ -153,8 +154,10 @@ contains
             tempid(1)=ctr_temp(i)%node_id(1)
             tempid(2)=ctr_temp(i)%node_id(2)
             tempid(3)=ctr_temp(i)%node_id(3)
-            ctr_temp(i)%area=0.5d0*((node(tempid(2))%coords(1)-node(tempid(1))%coords(1))*(node(tempid(3))%coords(2)-node(tempid(1))%coords(2))-&
-                (node(tempid(2))%coords(2)-node(tempid(1))%coords(2))*(node(tempid(3))%coords(1)-node(tempid(1))%coords(1)))
+            ctr_temp(i)%area=abs(0.5d0*((node(tempid(2))%coords(1)-node(tempid(1))%coords(1))*&
+                (node(tempid(3))%coords(2)-node(tempid(1))%coords(2))-&
+                (node(tempid(2))%coords(2)-node(tempid(1))%coords(2))*&
+                (node(tempid(3))%coords(1)-node(tempid(1))%coords(1))))
             ctr_temp(i)%coords=(node(tempid(1))%coords+node(tempid(2))%coords+node(tempid(3))%coords)/3.0d0
         enddo
 
@@ -176,8 +179,6 @@ contains
             face(i)%cell_id(2)=0
             face(i)%coords(2)=0
             face(i)%length=0
-            face(i)%cosx=0
-            face(i)%cosy=0
             face(i)%flux=0
             face(i)%weight(2)=0
         end do
@@ -337,8 +338,6 @@ contains
             face(i)%cell_id(2)=0
             face(i)%coords(2)=0
             face(i)%length=0
-            face(i)%cosx=0
-            face(i)%cosy=0
             face(i)%flux=0
             face(i)%weight(2)=0
         end do
@@ -447,12 +446,8 @@ contains
                 normal(2)=-tangent(1)
                 innerproduct=sum(normal(1:2)*(ctr(face(i)%cell_id(1))%coords(1:2)-face(i)%coords(1:2)))
                 if(innerproduct<0)then
-                    face(i)%cosx = -normal(1)
-                    face(i)%cosy = -normal(2)
                     face(i)%norm(1:2) = -normal(1:2)
                 else
-                    face(i)%cosx = normal(1)
-                    face(i)%cosy = normal(2)
                     face(i)%norm(1:2) = normal(1:2)
                 endif
                 !calculate cosine
@@ -477,6 +472,22 @@ contains
                 if(abs(tempcosine)>(1.0d0+1.0d-10))then
                     write(*,*) "check face weights..."
                     pause
+                endif
+            else
+                face(i)%coords=(node(face(i)%node_id(1))%coords+node(face(i)%node_id(2))%coords)/2.0d0
+                !> tangent direction node2-->node1
+                tangent(1)=node(face(i)%node_id(1))%coords(1)-node(face(i)%node_id(2))%coords(1)
+                tangent(2)=node(face(i)%node_id(1))%coords(2)-node(face(i)%node_id(2))%coords(2)
+                face(i)%length=sqrt(sum(tangent(:)**2.0d0))
+                tangent=tangent/face(i)%length
+                !> normal direction center2-->center1
+                normal(1)=tangent(2)
+                normal(2)=-tangent(1)
+                innerproduct=sum(normal(1:2)*(ctr(face(i)%cell_id(1))%coords(1:2)-face(i)%coords(1:2)))
+                if(innerproduct<0)then
+                    face(i)%norm(1:2) = -normal(1:2)
+                else
+                    face(i)%norm(1:2) = normal(1:2)
                 endif
             endif
         enddo
@@ -530,8 +541,8 @@ contains
         integer :: i,j
 
         !velocity number
-        unum=32 !polar
-        vnum=32 !rotation
+        unum=16 !polar
+        vnum=16 !rotation
 
         !allocate array
         allocate(uspace(unum,vnum))
@@ -703,8 +714,8 @@ contains
             !velocity
             theta=acos(2.0d0*rand_num(k,1)-1)
             phi=2.0d0*pi*rand_num(k,2)
-            particle(k)%v(1)=sin(theta)*cos(phi)
-            particle(k)%v(2)=sin(theta)*sin(phi)
+            particle(k)%v(1)=lightspeed*sin(theta)*cos(phi)
+            particle(k)%v(2)=lightspeed*sin(theta)*sin(phi)
             !position
             x1_temp=rand_num(k,3)
             x2_temp=rand_num(k,4)
@@ -722,14 +733,14 @@ contains
     !--------------------------------------------------
     subroutine output()
         character(len=10) :: outfilename0
-        character(len=20) :: outfilename1
+        character(len=100) :: outfilename1
         integer :: i,j
 
         write(outfilename0,'(I10.10)') iteration
         outfilename1=trim(outfilename0)//trim(outputfilename)
         open(unit = 21, file = outfilename1, status = 'replace')
         write(21,'(a)') 'VARIABLES=X,Y,rho,T,kappa,ParticlePercentage'
-        write(21,*) 'ZONE N=',node_number,',E=',cell_number,',datapacking=block'
+        write(21,*) 'ZONE N=',node_number,',E=',cell_number_inner,',datapacking=block'
         write(21,'(a)') 'varlocation=([3-6]=cellcentered)'
         write(21,'(a)') 'ZONETYPE=FETRIANGLE'
 
@@ -742,23 +753,23 @@ contains
             write(21,*) node(i)%coords(2)
         end do
 
-        do i = 1, cell_number
+        do i = 1, cell_number_inner
             write(21,*) ctr(i)%rho
         enddo
 
-        do i = 1, cell_number
+        do i = 1, cell_number_inner
             write(21,*) ctr(i)%T
         enddo
 
-        do i = 1, cell_number
+        do i = 1, cell_number_inner
             write(21,*) ctr(i)%kappa_effective
         enddo
 
-        do i = 1, cell_number
+        do i = 1, cell_number_inner
             write(21,*) ctr(i)%WaveParticleRatio
         enddo
 
-        do i = 1, cell_number
+        do i = 1, cell_number_inner
             write(21,*) ctr(i)%node_id(1),ctr(i)%node_id(2),ctr(i)%node_id(3)
         enddo
         close(unit = 21)
@@ -767,13 +778,17 @@ contains
     !--------------------------------------------------
     !>write result
     !--------------------------------------------------
-    subroutine output4()
+    subroutine output2()
+        character(len=10) :: outfilename0
+        character(len=100) :: outfilename1
         integer :: i,j
 
-        open(unit = 21, file = 'output.plt', status = 'replace')
-        write(21,'(a)') 'VARIABLES=X,Y,rho,T'
-        write(21,*) 'ZONE N=',node_number*4,',E=',cell_number*4,',datapacking=block'
-        write(21,'(a)') 'varlocation=([3-4]=cellcentered)'
+        write(outfilename0,'(I10.10)') iteration
+        outfilename1=trim(outfilename0)//trim(outputfilename)
+        open(unit = 21, file = outfilename1, status = 'replace')
+        write(21,'(a)') 'VARIABLES=X,Y,rho,T,kappa,ParticlePercentage'
+        write(21,*) 'ZONE N=',node_number*2,',E=',cell_number_inner*2,',datapacking=block'
+        write(21,'(a)') 'varlocation=([3-6]=cellcentered)'
         write(21,'(a)') 'ZONETYPE=FETRIANGLE'
 
         !node data
@@ -783,12 +798,6 @@ contains
         do i = 1, node_number
             write(21,*) node(i)%coords(1)
         end do
-        do i = 1, node_number
-            write(21,*) -node(i)%coords(1)
-        end do
-        do i = 1, node_number
-            write(21,*) -node(i)%coords(1)
-        end do
 
         do i = 1, node_number
             write(21,*) node(i)%coords(2)
@@ -796,30 +805,41 @@ contains
         do i = 1, node_number
             write(21,*) -node(i)%coords(2)
         end do
-        do i = 1, node_number
-            write(21,*) node(i)%coords(2)
-        end do
-        do i = 1, node_number
-            write(21,*) -node(i)%coords(2)
-        end do
 
-        do j=1,4
-            do i = 1, cell_number
-                write(21,*) ctr(i)%rho
-            enddo
+        do i = 1, cell_number_inner
+            write(21,*) ctr(i)%rho
+        enddo
+        do i = 1, cell_number_inner
+            write(21,*) ctr(i)%rho
         enddo
 
-        do j=1,4
-            do i = 1, cell_number
-                write(21,*) ctr(i)%T
-            enddo
+        do i = 1, cell_number_inner
+            write(21,*) ctr(i)%T
+        enddo
+        do i = 1, cell_number_inner
+            write(21,*) ctr(i)%T
         enddo
 
-        do j=1,4
-            do i = 1, cell_number
-                write(21,*) (j-1)*node_number+ctr(i)%node_id(1),(j-1)*node_number+ctr(i)%node_id(2),(j-1)*node_number+ctr(i)%node_id(3)
-            enddo
+        do i = 1, cell_number_inner
+            write(21,*) ctr(i)%kappa_effective
+        enddo
+        do i = 1, cell_number_inner
+            write(21,*) ctr(i)%kappa_effective
+        enddo
+
+        do i = 1, cell_number_inner
+            write(21,*) ctr(i)%WaveParticleRatio
+        enddo
+        do i = 1, cell_number_inner
+            write(21,*) ctr(i)%WaveParticleRatio
+        enddo
+
+        do i = 1, cell_number_inner
+            write(21,*) ctr(i)%node_id(1),ctr(i)%node_id(2),ctr(i)%node_id(3)
+        enddo
+        do i = 1, cell_number_inner
+            write(21,*) ctr(i)%node_id(1)+node_number,ctr(i)%node_id(2)+node_number,ctr(i)%node_id(3)+node_number
         enddo
         close(unit = 21)
-    end subroutine output4
+    end subroutine output2
 end module io

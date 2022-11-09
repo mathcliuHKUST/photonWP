@@ -22,7 +22,7 @@ contains
                 ctr(i)%absorbtion_scaled=1.0d-99
             else
                 !sigma
-                ctr(i)%absorbtion=min(30.0d0/ctr(i)%T**3.0d0,1.0d8)
+                ctr(i)%absorbtion=min(300.0d0/ctr(i)%T**3.0d0,1.0d8)
                 !nu=c*sigma/epsilon^2
                 ctr(i)%absorbtion_scaled=lightspeed*ctr(i)%absorbtion/Kn**2.0d0
             endif
@@ -74,6 +74,7 @@ contains
         if(ctr(cell_id)%group==cell01 .or. ctr(cell_id)%group==cell02)then
             particle(particle_id)%ta=maxnumber
         else
+            !particle(particle_id)%ta=maxnumber
             particle(particle_id)%ta=-log(rand_num)/ctr(cell_id)%absorbtion_scaled
         endif
 
@@ -179,6 +180,21 @@ contains
             particle(particle_id)%flag_track=0
             particle(particle_id)%flag_delete=1
         endif
+
+        !----------------------------------------------------------------------------
+        !> absorb photon
+        !----------------------------------------------------------------------------
+        !! sample collision time
+        !cell_id=particle(particle_id)%cell
+        !if(ctr(cell_id)%group==cell01 .or. ctr(cell_id)%group==cell02)then
+        !    particle(particle_id)%ta=maxnumber
+        !else
+        !    particle(particle_id)%ta=-log(rand_num)/ctr(cell_id)%absorbtion_scaled
+        !endif
+        !if(particle(particle_id)%ta<dt)then
+        !    particle(particle_id)%flag_track=0
+        !    particle(particle_id)%flag_delete=1
+        !endif
     endsubroutine stream
 
     !--------------------------------------------------
@@ -218,7 +234,7 @@ contains
                 !!UGKP
                 !method 1
                 ctr(i)%rho_wave=max(ctr(i)%rho-ctr(i)%rho_particle,0.0d0)
-                ctr(i)%WaveParticleRatio=ctr(i)%rho_particle/ctr(i)%rho
+                ctr(i)%WaveParticleRatio=ctr(i)%rho_particle/(ctr(i)%rho+1.0d-10)
                 !!method 2
                 !ctr(i)%rho_wave=ctr(i)%rho*(1-exp(-dt*ctr(i)%absorbtion_scaled))
 
@@ -319,8 +335,8 @@ contains
             !velocity
             theta=acos(2.0d0*rand_num(k-particle_number_survive,1)-1)
             phi=2.0d0*pi*rand_num(k-particle_number_survive,2)
-            particle(k)%v(1)=sin(theta)*cos(phi)
-            particle(k)%v(2)=sin(theta)*sin(phi)
+            particle(k)%v(1)=lightspeed*sin(theta)*cos(phi)
+            particle(k)%v(2)=lightspeed*sin(theta)*sin(phi)
             !position
             x1_temp=rand_num(k-particle_number_survive,3)
             x2_temp=rand_num(k-particle_number_survive,4)

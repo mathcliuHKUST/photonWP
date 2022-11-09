@@ -15,7 +15,7 @@ contains
         dt         = 1.0d99
         sim_time   = 0.0d0
         end_time   = 100.0d0 
-        cfl        = 0.2d0
+        cfl        = 0.20d0
         kn         = 1.0d0
         lightspeed = 29.98d0
         radconst   = 0.01372d0
