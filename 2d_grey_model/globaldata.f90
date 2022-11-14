@@ -22,8 +22,8 @@ module global_data
     integer :: method_scheme ! 1 wp, 2 sn
     integer :: method_interp !interpolation method
     integer :: method_output !output as cell centered or point value
-    character(20) :: inputfilename
-    character(20) :: outputfilename
+    character(100) :: inputfilename
+    character(100) :: outputfilename
 
     !--------------------------------------------------
     !gas properties
@@ -61,10 +61,11 @@ module global_data
     integer,parameter :: cell11 = -3
     integer,parameter :: cell12 = -4
     integer,parameter :: cell13 = -5
-    integer,parameter :: face0  = -6
-    integer,parameter :: face1  = -7
-    integer,parameter :: node0  = -8
-    integer,parameter :: node1  = -9
+    integer,parameter :: cell14 = -6
+    integer,parameter :: face0  = -7
+    integer,parameter :: face1  = -8
+    integer,parameter :: node0  = -9
+    integer,parameter :: node1  = -10
 
     !--------------------------------------------------
     !basic derived type
@@ -85,7 +86,6 @@ module global_data
         real(kind=double) :: coords(1:2) !face center coordinates
         real(kind=double) :: length !length of cell interface
         !normal direction
-        real(kind=double) :: cosx,cosy !directional cosine(cell_id(1)->cell_id(2))
         real(kind=double) :: norm(1:2)
         real(kind=double) :: weight(1:2) !projection of norm direction
         !field

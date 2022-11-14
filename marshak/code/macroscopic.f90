@@ -51,7 +51,7 @@ contains
         do i=cell_number_inner+1,cell_number
             if(ctr(i)%coords(2)>0.5)then
                 !sigma
-                ctr(i)%absorbtion=min(10.0d0/ctr(i)%T**3.0d0,1.0d8)
+                ctr(i)%absorbtion=min(300.0d0/ctr(i)%T**3.0d0,1.0d8)
                 !capacity
                 ctr(i)%capacity=1.0d-1
                 !kappa=ac/3*sigma
@@ -64,14 +64,13 @@ contains
                 flux_limiter(i)=(1.0d0-2.0d0/(dt*ctr(i)%absorbtion_scaled)+exp(-dt*ctr(i)%absorbtion_scaled)+&
                     2.0d0*exp(-dt*ctr(i)%absorbtion_scaled)/(dt*ctr(i)%absorbtion_scaled))
                 !!UGKWP
-                flux_limiter(i)=(1.0d0-2.0d0/(dt*ctr(i)%absorbtion_scaled)+exp(-dt*ctr(i)%absorbtion_scaled)+&
-                                2.0d0*exp(-dt*ctr(i)%absorbtion_scaled)/(dt*ctr(i)%absorbtion_scaled))*&
-                                (1.0d0-exp(-dt*ctr(i)%absorbtion_scaled))
-                ctr(i)%kappa_effective=ctr(i)%kappa*flux_limiter(i)
-                !ctr(i)%kappa_effective=ctr(i)%kappa
+                flux_limiter(i)=(1.0d0-exp(-dt*ctr(i)%absorbtion_scaled))+&
+                    (exp(-dt*ctr(i)%absorbtion_scaled))*(1.0d0-exp(-dt*ctr(i)%absorbtion_scaled))
+                !ctr(i)%kappa_effective=ctr(i)%kappa*flux_limiter(i)
+                ctr(i)%kappa_effective=ctr(i)%kappa
             else
                 !sigma
-                ctr(i)%absorbtion=min(10.0d0/ctr(i)%T**3.0d0,1.0d8)
+                ctr(i)%absorbtion=min(300.0d0/ctr(i)%T**3.0d0,1.0d8)
                 !capacity
                 ctr(i)%capacity=1.0d-1
                 !kappa=ac/3*sigma
@@ -84,11 +83,10 @@ contains
                 flux_limiter(i)=(1.0d0-2.0d0/(dt*ctr(i)%absorbtion_scaled)+exp(-dt*ctr(i)%absorbtion_scaled)+&
                     2.0d0*exp(-dt*ctr(i)%absorbtion_scaled)/(dt*ctr(i)%absorbtion_scaled))
                 !!UGKWP
-                flux_limiter(i)=(1.0d0-2.0d0/(dt*ctr(i)%absorbtion_scaled)+exp(-dt*ctr(i)%absorbtion_scaled)+&
-                                2.0d0*exp(-dt*ctr(i)%absorbtion_scaled)/(dt*ctr(i)%absorbtion_scaled))*&
-                                (1.0d0-exp(-dt*ctr(i)%absorbtion_scaled))
-                ctr(i)%kappa_effective=ctr(i)%kappa*flux_limiter(i)
-                !ctr(i)%kappa_effective=ctr(i)%kappa
+                flux_limiter(i)=(1.0d0-exp(-dt*ctr(i)%absorbtion_scaled))+&
+                    (exp(-dt*ctr(i)%absorbtion_scaled))*(1.0d0-exp(-dt*ctr(i)%absorbtion_scaled))
+                !ctr(i)%kappa_effective=ctr(i)%kappa*flux_limiter(i)
+                ctr(i)%kappa_effective=ctr(i)%kappa
             endif
         enddo
 
@@ -103,7 +101,7 @@ contains
             do i=1,cell_number_inner
                 if(ctr(i)%group==cell11 .or. ctr(i)%group==cell13)then
                     !sigma
-                    ctr(i)%absorbtion=min(10.0d0/Tk(i)**3.0d0,1.0d8)
+                    ctr(i)%absorbtion=min(300.0d0/Tk(i)**3.0d0,1.0d8)
                     !capacity
                     ctr(i)%capacity=1.0d-1
                     !kappa=ac/3*sigma
@@ -116,14 +114,13 @@ contains
                     flux_limiter(i)=(1.0d0-2.0d0/(dt*ctr(i)%absorbtion_scaled)+exp(-dt*ctr(i)%absorbtion_scaled)+&
                         2.0d0*exp(-dt*ctr(i)%absorbtion_scaled)/(dt*ctr(i)%absorbtion_scaled))
                     !!UGKWP
-                    flux_limiter(i)=(1.0d0-2.0d0/(dt*ctr(i)%absorbtion_scaled)+exp(-dt*ctr(i)%absorbtion_scaled)+&
-                                    2.0d0*exp(-dt*ctr(i)%absorbtion_scaled)/(dt*ctr(i)%absorbtion_scaled))*&
-                                    (1.0d0-exp(-dt*ctr(i)%absorbtion_scaled))
-                    ctr(i)%kappa_effective=ctr(i)%kappa*flux_limiter(i)
-                    !ctr(i)%kappa_effective=ctr(i)%kappa
+                    flux_limiter(i)=(1.0d0-exp(-dt*ctr(i)%absorbtion_scaled))+&
+                        (exp(-dt*ctr(i)%absorbtion_scaled))*(1.0d0-exp(-dt*ctr(i)%absorbtion_scaled))
+                    !ctr(i)%kappa_effective=ctr(i)%kappa*flux_limiter(i)
+                    ctr(i)%kappa_effective=ctr(i)%kappa
                 elseif(ctr(i)%group==cell12 .or. ctr(i)%group==cell14)then
                     !sigma
-                    ctr(i)%absorbtion=min(10.0d0/Tk(i)**3.0d0,1.0d8)
+                    ctr(i)%absorbtion=min(300.0d0/Tk(i)**3.0d0,1.0d8)
                     !capacity
                     ctr(i)%capacity=1.0d-1
                     !kappa=ac/3*sigma
@@ -136,11 +133,10 @@ contains
                     flux_limiter(i)=(1.0d0-2.0d0/(dt*ctr(i)%absorbtion_scaled)+exp(-dt*ctr(i)%absorbtion_scaled)+&
                         2.0d0*exp(-dt*ctr(i)%absorbtion_scaled)/(dt*ctr(i)%absorbtion_scaled))
                     !!UGKWP
-                    flux_limiter(i)=(1.0d0-2.0d0/(dt*ctr(i)%absorbtion_scaled)+exp(-dt*ctr(i)%absorbtion_scaled)+&
-                                    2.0d0*exp(-dt*ctr(i)%absorbtion_scaled)/(dt*ctr(i)%absorbtion_scaled))*&
-                                    (1.0d0-exp(-dt*ctr(i)%absorbtion_scaled))
-                    ctr(i)%kappa_effective=ctr(i)%kappa*flux_limiter(i)
-                    !ctr(i)%kappa_effective=ctr(i)%kappa
+                    flux_limiter(i)=(1.0d0-exp(-dt*ctr(i)%absorbtion_scaled))+&
+                        (exp(-dt*ctr(i)%absorbtion_scaled))*(1.0d0-exp(-dt*ctr(i)%absorbtion_scaled))
+                    !ctr(i)%kappa_effective=ctr(i)%kappa*flux_limiter(i)
+                    ctr(i)%kappa_effective=ctr(i)%kappa
                 else
                     write(*,*) "source iteration cross section error..."
                     pause

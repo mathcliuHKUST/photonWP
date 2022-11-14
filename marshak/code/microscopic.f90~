@@ -78,7 +78,7 @@ contains
             particle(particle_id)%ta=maxnumber
         else
             !particle(particle_id)%ta=maxnumber
-            particle(particle_id)%ta=maxnumber!-log(rand_num)/ctr(cell_id)%absorbtion_scaled
+            particle(particle_id)%ta=-log(rand_num)/ctr(cell_id)%absorbtion_scaled
         endif
 
         ! particle trajectory

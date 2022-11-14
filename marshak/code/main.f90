@@ -54,7 +54,7 @@ program main
             write(*,"(A18,I15,2E15.7)") "iter,sim_time,dt:",iteration,sim_time,dt
             write(HSTFILE,"(I15,6E15.7)") iteration,sim_time,dt
         end if
-        if (mod(iteration,100)==0) then
+        if (mod(iteration,10)==0) then
             call output()
         end if
 

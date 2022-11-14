@@ -1,3 +1,4 @@
+!--------------------------------------------------
 !>main program
 !--------------------------------------------------
 program main
@@ -11,7 +12,6 @@ program main
     !initialization
     call init()
     call output()
-    stop
 
     !open file and write header
     open(unit=HSTFILE,file=HSTFILENAME,status="replace",action="write") !open history file
@@ -23,14 +23,14 @@ program main
             !----------------------------------------------------------------------
             !> UGKWP method
             !----------------------------------------------------------------------
-            !> stream particle: free stream flux
-            call update_particle()
+            !!> stream particle: free stream flux
+            !call update_particle()
 
             !> source iteration: diffusive flux
             call source_iteration()
 
-            !> resample particle: microscopic closure
-            call reinit_particle()
+            !!> resample particle: microscopic closure
+            !call reinit_particle()
         elseif(method_scheme==SN)then
             !----------------------------------------------------------------------
             !> SN method
@@ -51,12 +51,12 @@ program main
         !----------------------------------------------------------------------
         !> output
         !----------------------------------------------------------------------
-        if (mod(iteration,1)==0) then
+        if (mod(iteration,10)==0) then
             write(*,"(A18,I15,2E15.7)") "iter,sim_time,dt:",iteration,sim_time,dt
             write(HSTFILE,"(I15,6E15.7)") iteration,sim_time,dt
         end if
         if (mod(iteration,100)==0) then
-            call output()
+            call output2()
         end if
 
         !----------------------------------------------------------------------
@@ -71,5 +71,5 @@ program main
     close(HSTFILE)
 
     !output solution
-    call output()
+    call output2()
 end program main

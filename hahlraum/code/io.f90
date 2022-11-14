@@ -21,7 +21,7 @@ contains
         radconst   = 0.01372d0
         ref_number = 50000
         ref_weight = 1.0d0
-        inputfilename ='hohlraum.msh'
+        inputfilename ='hohlraum5.msh'
         outputfilename='hohlraum.plt'
 
         !method
