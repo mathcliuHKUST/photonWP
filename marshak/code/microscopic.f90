@@ -5,7 +5,6 @@ module microscopic
     use global_data
     implicit none
 contains
-
     !--------------------------------------------------
     !>update particle
     !--------------------------------------------------
@@ -13,33 +12,34 @@ contains
         real(kind=double),allocatable,dimension(:) :: rand_num
         integer :: i,j,k
 
-        allocate(rand_num(particle_number))
-        !----------------------------------------------------------
-        !> calculate cross section
-        !----------------------------------------------------------
-        do i=1,cell_number
-            if(ctr(i)%group==cell01 .or. ctr(i)%group==cell02)then
-                !sigma
-                ctr(i)%absorbtion=min(300.0d0/ctr(i)%T**3.0d0,1.0d8)
-                !nu=c*sigma/epsilon^2
-                ctr(i)%absorbtion_scaled=lightspeed*ctr(i)%absorbtion/Kn**2.0d0
-            else
-                !sigma
-                ctr(i)%absorbtion=min(300.0d0/ctr(i)%T**3.0d0,1.0d8)
-                !nu=c*sigma/epsilon^2
-                ctr(i)%absorbtion_scaled=lightspeed*ctr(i)%absorbtion/Kn**2.0d0
-            endif
-        enddo
+        !!----------------------------------------------------------
+        !!> calculate cross section
+        !!----------------------------------------------------------
+        !do i=1,cell_number
+        !    if(ctr(i)%group==cell01 .or. ctr(i)%group==cell02)then
+        !        ctr(i)%absorbtion_scaled=1.0d-99
+        !    else
+        !        !sigma
+        !        ctr(i)%absorbtion=min(300.0d0/ctr(i)%T**3.0d0,1.0d8)
+        !        !nu=c*sigma/epsilon^2
+        !        ctr(i)%absorbtion_scaled=lightspeed*ctr(i)%absorbtion/Kn**2.0d0
+        !    endif
+        !enddo
+
         !----------------------------------------------------------
         !> stream particles
         !----------------------------------------------------------
+        allocate(rand_num(particle_number))
+        do i=1,face_number
+            face(i)%flux_particle=0
+        enddo
         do while(.true.)
             ! random number
-            do i=1,particle_number
-                if(particle(i)%flag_track==1)then
-                    call random_number(rand_num(i))
-                endif
-            enddo
+            !do i=1,particle_number
+            !    if(particle(i)%flag_track==1)then
+            !        call random_number(rand_num(i))
+            !    endif
+            !enddo
             !track particle
             !$omp parallel
             !$omp do
@@ -50,8 +50,28 @@ contains
             enddo
             !$omp end do nowait
             !$omp end parallel
-            !write(*,*) sum(particle(1:particle_number)%flag_track)
             if(sum(particle(1:particle_number)%flag_track)==0) exit
+        enddo
+
+        !----------------------------------------------------------
+        !> microscopic flux
+        !----------------------------------------------------------
+        do i=1,face_number
+            if(face(i)%group==face1)then
+                !face(i)%kappa=2.0d0*(ctr(face(i)%cell_id(1))%kappa_effective*ctr(face(i)%cell_id(2))%kappa_effective)/&
+                !    sum(ctr(face(i)%cell_id(1:2))%kappa_effective)
+                face(i)%absorbtion_scaled=max(ctr(face(i)%cell_id(1))%absorbtion_scaled,ctr(face(i)%cell_id(2))%absorbtion_scaled)
+            else
+                face(i)%absorbtion_scaled=ctr(face(i)%cell_id(1))%absorbtion_scaled
+            endif
+        enddo
+        do i=1,face_number
+            !ctr(face(i)%cell_id(1))%rho=ctr(face(i)%cell_id(1))%rho-face(i)%flux_particle/ctr(face(i)%cell_id(1))%area
+            !ctr(face(i)%cell_id(2))%rho=ctr(face(i)%cell_id(2))%rho+face(i)%flux_particle/ctr(face(i)%cell_id(2))%area
+            ctr(face(i)%cell_id(1))%rho=ctr(face(i)%cell_id(1))%rho-face(i)%flux_particle*exp(-dt*face(i)%absorbtion_scaled)/ctr(face(i)%cell_id(1))%area
+            if(face(i)%cell_id(2) /=0)then
+                ctr(face(i)%cell_id(2))%rho=ctr(face(i)%cell_id(2))%rho+face(i)%flux_particle*exp(-dt*face(i)%absorbtion_scaled)/ctr(face(i)%cell_id(2))%area
+            endif
         enddo
     end subroutine update_particle
 
@@ -67,20 +87,24 @@ contains
         real(kind=double) :: crosspoint(2,3)
         real(kind=double) :: vnorm
         real(kind=double) :: tb(3)
-        real(kind=double),parameter :: maxnumber=1.0d20
         integer,intent(in) :: particle_id
         integer :: cell_id,face_id,node_id(2)
         integer :: i,j,k
 
+        !--------------------------------------------------
         ! sample collision time
+        !--------------------------------------------------
         cell_id=particle(particle_id)%cell
         if(ctr(cell_id)%group==cell01 .or. ctr(cell_id)%group==cell02)then
             particle(particle_id)%ta=maxnumber
         else
-            !particle(particle_id)%ta=maxnumber
-            particle(particle_id)%ta=maxnumber!-log(rand_num)/ctr(cell_id)%absorbtion_scaled
+            particle(particle_id)%ta=maxnumber
+            !particle(particle_id)%ta=-log(rand_num)/ctr(cell_id)%absorbtion_scaled
         endif
 
+        !--------------------------------------------------
+        !> calculate cross points
+        !--------------------------------------------------
         ! particle trajectory
         velocity(1)=particle(particle_id)%v(1)
         velocity(2)=particle(particle_id)%v(2)
@@ -126,13 +150,18 @@ contains
                         do k=1,ctr(particle(particle_id)%cell_new)%face_number
                             if(face(ctr(particle(particle_id)%cell_new)%face_id(k))%cell_id(1)==cell_id)then
                                 particle(particle_id)%face_in_new=ctr(particle(particle_id)%cell_new)%face_id(k)
+                                if(ctr(cell_id)%face_id(i) /= particle(particle_id)%face_in_new)then
+                                    write(*,*) "face id error..."
+                                endif
                             endif
                         enddo
+                        particle(particle_id)%face_in_new=ctr(cell_id)%face_id(i)
                     elseif(ctr(particle(particle_id)%cell)%group==cell13 .or. ctr(particle(particle_id)%cell)%group==cell14)then
                         particle(particle_id)%face_in_new=ctr(cell_id)%face_id(i)
                     else
                         particle(particle_id)%flag_delete=1
                         particle(particle_id)%flag_track=0
+                        particle(particle_id)%face_in_new=ctr(cell_id)%face_id(i)
                     endif
                 else
                     particle(particle_id)%cell_new=face(ctr(cell_id)%face_id(i))%cell_id(1)
@@ -140,61 +169,58 @@ contains
                         do k=1,ctr(particle(particle_id)%cell_new)%face_number
                             if(face(ctr(particle(particle_id)%cell_new)%face_id(k))%cell_id(2)==cell_id)then
                                 particle(particle_id)%face_in_new=ctr(particle(particle_id)%cell_new)%face_id(k)
+                                if(ctr(cell_id)%face_id(i) /= particle(particle_id)%face_in_new)then
+                                    write(*,*) "face id error..."
+                                endif
                             endif
                         enddo
+                        particle(particle_id)%face_in_new=ctr(cell_id)%face_id(i)
                     elseif(ctr(particle(particle_id)%cell)%group==cell13 .or. ctr(particle(particle_id)%cell)%group==cell14)then
                         particle(particle_id)%face_in_new=ctr(cell_id)%face_id(i)
                     else
                         particle(particle_id)%flag_delete=1
                         particle(particle_id)%flag_track=0
+                        particle(particle_id)%face_in_new=ctr(cell_id)%face_id(i)
                     endif
                 endif
             endif
         enddo
 
         ! update particle position & free stream flux
-        if(particle(particle_id)%tb<particle(particle_id)%ta)then
+        !if(particle(particle_id)%tb<particle(particle_id)%ta)then
             ! free stream
             if(particle(particle_id)%t+particle(particle_id)%tb<dt)then
                 particle(particle_id)%t=particle(particle_id)%t+particle(particle_id)%tb
-                ctr(particle(particle_id)%cell)%rho=ctr(particle(particle_id)%cell)%rho-particle(particle_id)%weight/ctr(particle(particle_id)%cell)%area
+                !ctr(particle(particle_id)%cell)%rho=ctr(particle(particle_id)%cell)%rho-particle(particle_id)%weight/ctr(particle(particle_id)%cell)%area
                 if(particle(particle_id)%cell_new/=0)then
                     particle(particle_id)%x=particle(particle_id)%x_new
                     particle(particle_id)%cell=particle(particle_id)%cell_new
                     particle(particle_id)%face_in=particle(particle_id)%face_in_new
-                    ctr(particle(particle_id)%cell)%rho=ctr(particle(particle_id)%cell)%rho+particle(particle_id)%weight/ctr(particle(particle_id)%cell)%area
+                    if(particle(particle_id)%cell==face(particle(particle_id)%face_in)%cell_id(1))then
+                        face(particle(particle_id)%face_in)%flux_particle=face(particle(particle_id)%face_in)%flux_particle-particle(particle_id)%weight
+                    else
+                        face(particle(particle_id)%face_in)%flux_particle=face(particle(particle_id)%face_in)%flux_particle+particle(particle_id)%weight
+                    endif
+                    !ctr(particle(particle_id)%cell)%rho=ctr(particle(particle_id)%cell)%rho+particle(particle_id)%weight/ctr(particle(particle_id)%cell)%area
                 elseif(ctr(particle(particle_id)%cell)%group==cell13 .or. ctr(particle(particle_id)%cell)%group==cell14)then
                     particle(particle_id)%v(2)=-particle(particle_id)%v(2)
                     particle(particle_id)%x=particle(particle_id)%x_new
                     particle(particle_id)%cell=particle(particle_id)%cell
                     particle(particle_id)%face_in=particle(particle_id)%face_in_new
-                    ctr(particle(particle_id)%cell)%rho=ctr(particle(particle_id)%cell)%rho+particle(particle_id)%weight/ctr(particle(particle_id)%cell)%area
+                    !ctr(particle(particle_id)%cell)%rho=ctr(particle(particle_id)%cell)%rho+particle(particle_id)%weight/ctr(particle(particle_id)%cell)%area
                 else
                     particle(particle_id)%flag_track=0
                     particle(particle_id)%flag_delete=1
+                    particle(particle_id)%face_in=particle(particle_id)%face_in_new
+                    face(particle(particle_id)%face_in)%flux_particle=face(particle(particle_id)%face_in)%flux_particle+particle(particle_id)%weight
                 endif
             else
                 particle(particle_id)%x=particle(particle_id)%x+particle(particle_id)%v*(dt-particle(particle_id)%t)
                 particle(particle_id)%t=dt
                 particle(particle_id)%flag_track=0
             endif
-        else
-            ! absorbed
-            particle(particle_id)%flag_track=0
-            particle(particle_id)%flag_delete=1
-        endif
-
-        !----------------------------------------------------------------------------
-        !> absorb photon
-        !----------------------------------------------------------------------------
-        !! sample collision time
-        !cell_id=particle(particle_id)%cell
-        !if(ctr(cell_id)%group==cell01 .or. ctr(cell_id)%group==cell02)then
-        !    particle(particle_id)%ta=maxnumber
         !else
-        !    particle(particle_id)%ta=-log(rand_num)/ctr(cell_id)%absorbtion_scaled
-        !endif
-        !if(particle(particle_id)%ta<dt)then
+        !    ! absorbed
         !    particle(particle_id)%flag_track=0
         !    particle(particle_id)%flag_delete=1
         !endif
@@ -205,9 +231,28 @@ contains
     !--------------------------------------------------
     subroutine reinit_particle()
         real(kind=double),allocatable,dimension(:,:) :: rand_num
+        real(kind=double),allocatable,dimension(:) :: rand_ta
         integer :: particle_number_survive
         integer :: cell_id
         integer :: i,j,k
+
+        !----------------------------------------------------------------------------
+        !> absorb photon
+        !----------------------------------------------------------------------------
+        allocate(rand_ta(particle_number))
+        do i=1,particle_number
+            ! sample collision time
+            cell_id=particle(i)%cell
+            if(ctr(cell_id)%group==cell01 .or. ctr(cell_id)%group==cell02)then
+                particle(i)%flag_delete=1
+            else
+                call random_number(rand_ta(i))
+                particle(i)%ta=-log(rand_ta(i))/ctr(cell_id)%absorbtion_scaled
+                if(particle(i)%ta<dt)then
+                    particle(i)%flag_delete=1
+                endif
+            endif
+        enddo
 
         ! particle number
         do i=1,cell_number
@@ -226,7 +271,9 @@ contains
             endif
         enddo
 
-        !calculate rho_wave
+        !----------------------------------------------------------------------------
+        !> calculate rho_wave
+        !----------------------------------------------------------------------------
         do i=1,cell_number
             if(ctr(i)%group==cell01)then
                 ! boundary condition
@@ -236,7 +283,7 @@ contains
             else
                 !!UGKP
                 !method 1
-                ctr(i)%rho_wave=0 !max(ctr(i)%rho-ctr(i)%rho_particle,0.0d0)*exp(-dt*ctr(i)%absorbtion_scaled)
+                ctr(i)%rho_wave=max(ctr(i)%rho-ctr(i)%rho_particle,0.0d0)
                 ctr(i)%WaveParticleRatio=ctr(i)%rho_particle/(ctr(i)%rho+1.0d-10)
                 !!method 2
                 !ctr(i)%rho_wave=ctr(i)%rho*(1-exp(-dt*ctr(i)%absorbtion_scaled))
@@ -338,8 +385,8 @@ contains
             !velocity
             theta=acos(2.0d0*rand_num(k-particle_number_survive,1)-1)
             phi=2.0d0*pi*rand_num(k-particle_number_survive,2)
-            particle(k)%v(1)=1 !lightspeed*sin(theta)*cos(phi)
-            particle(k)%v(2)=0 !lightspeed*sin(theta)*sin(phi)
+            particle(k)%v(1)=lightspeed*sin(theta)*cos(phi)
+            particle(k)%v(2)=lightspeed*sin(theta)*sin(phi)
             !position
             x1_temp=rand_num(k-particle_number_survive,3)
             x2_temp=rand_num(k-particle_number_survive,4)

@@ -14,8 +14,8 @@ contains
         iteration  = 1
         dt         = 1.0d99
         sim_time   = 0.0d0
-        end_time   = 0.1 !100.0d0 
-        cfl        = 10.0d0
+        end_time   = 10.0d0 
+        cfl        = 100.0d0
         kn         = 1.0d0
         lightspeed = 29.98d0
         radconst   = 0.01372d0
@@ -632,11 +632,6 @@ contains
         ! particle number
         particle_number=0
         do i=1,cell_number
-            !sigma
-            ctr(i)%absorbtion=min(300.0d0/ctr(i)%T**3.0d0,1.0d8)
-            !nu=c*sigma/epsilon^2
-            ctr(i)%absorbtion_scaled=lightspeed*ctr(i)%absorbtion/Kn**2.0d0
-            !ctr(i)%particle_number=max(int(ctr(i)%rho*ctr(i)%area*exp(-dt*ctr(i)%absorbtion_scaled)/ref_weight),0)
             ctr(i)%particle_number=max(int(ctr(i)%rho*ctr(i)%area/ref_weight),0)
             particle_number=particle_number+ctr(i)%particle_number
         enddo
@@ -715,15 +710,12 @@ contains
             particle(k)%ta=0
             particle(k)%tb=0
             !weight
-            !particle(k)%weight=ctr(cell_number)%rho*ctr(cell_number)%area*exp(-dt*ctr(cell_number)%absorbtion_scaled)/&
-            !    ctr(cell_number)%particle_number
-            particle(k)%weight=ctr(cell_number)%rho*ctr(cell_number)%area/&
-                ctr(cell_number)%particle_number
+            particle(k)%weight=ctr(cell_number)%rho*ctr(cell_number)%area/ctr(cell_number)%particle_number
             !velocity
             theta=acos(2.0d0*rand_num(k,1)-1)
             phi=2.0d0*pi*rand_num(k,2)
-            particle(k)%v(1)=1.0d0 !lightspeed*sin(theta)*cos(phi)
-            particle(k)%v(2)=0 !lightspeed*sin(theta)*sin(phi)
+            particle(k)%v(1)=lightspeed*sin(theta)*cos(phi)
+            particle(k)%v(2)=lightspeed*sin(theta)*sin(phi)
             !position
             x1_temp=rand_num(k,3)
             x2_temp=rand_num(k,4)
@@ -748,7 +740,7 @@ contains
         outfilename1=trim(outfilename0)//trim(outputfilename)
         open(unit = 21, file = outfilename1, status = 'replace')
         write(21,'(a)') 'VARIABLES=X,Y,rho,T,kappa,ParticlePercentage'
-        write(21,*) 'ZONE N=',node_number,',E=',cell_number,',datapacking=block'
+        write(21,*) 'ZONE N=',node_number,',E=',cell_number_inner,',datapacking=block'
         write(21,'(a)') 'varlocation=([3-6]=cellcentered)'
         write(21,'(a)') 'ZONETYPE=FETRIANGLE'
 
@@ -760,45 +752,26 @@ contains
         do i = 1, node_number
             write(21,*) node(i)%coords(2)
         end do
-        do i = 1, cell_number
+
+        do i = 1, cell_number_inner
             write(21,*) ctr(i)%rho
         enddo
 
-        do i = 1, cell_number
+        do i = 1, cell_number_inner
             write(21,*) ctr(i)%T
         enddo
 
-        do i = 1, cell_number
+        do i = 1, cell_number_inner
             write(21,*) ctr(i)%kappa_effective
         enddo
 
-        do i = 1, cell_number
+        do i = 1, cell_number_inner
             write(21,*) ctr(i)%WaveParticleRatio
         enddo
 
-        do i = 1, cell_number
+        do i = 1, cell_number_inner
             write(21,*) ctr(i)%node_id(1),ctr(i)%node_id(2),ctr(i)%node_id(3)
         enddo
-
-        !do i = 1, cell_number_inner
-        !    write(21,*) ctr(i)%rho
-        !enddo
-
-        !do i = 1, cell_number_inner
-        !    write(21,*) ctr(i)%T
-        !enddo
-
-        !do i = 1, cell_number_inner
-        !    write(21,*) ctr(i)%kappa_effective
-        !enddo
-
-        !do i = 1, cell_number_inner
-        !    write(21,*) ctr(i)%WaveParticleRatio
-        !enddo
-
-        !do i = 1, cell_number_inner
-        !    write(21,*) ctr(i)%node_id(1),ctr(i)%node_id(2),ctr(i)%node_id(3)
-        !enddo
         close(unit = 21)
     end subroutine output
 

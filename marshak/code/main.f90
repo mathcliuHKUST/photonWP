@@ -22,13 +22,15 @@ program main
             !----------------------------------------------------------------------
             !> UGKWP method
             !----------------------------------------------------------------------
-            !> stream particle: free stream flux
+            !> 1.stream particle
+            !> 2.free stream flux
             call update_particle()
 
-            !> source iteration: diffusive flux
+            !> 1.diffusive flux
+            !> 2.absorbtion emission
             call source_iteration()
 
-            !> resample particle: microscopic closure
+            !> 1.distribution closure
             call reinit_particle()
         elseif(method_scheme==SN)then
             !----------------------------------------------------------------------
@@ -54,7 +56,7 @@ program main
             write(*,"(A18,I15,2E15.7)") "iter,sim_time,dt:",iteration,sim_time,dt
             write(HSTFILE,"(I15,6E15.7)") iteration,sim_time,dt
         end if
-        if (mod(iteration,10)==0) then
+        if (mod(iteration,100)==0) then
             call output()
         end if
 

@@ -13,6 +13,7 @@ module global_data
     !--------------------------------------------------
     real(kind=double),parameter :: PI = 4.0d0*atan(1.0d0) !Pi
     real(kind=double),parameter :: SMV = tiny(real(1.0,8)) !small value to avoid 0/0
+    real(kind=double),parameter :: maxnumber=1.0d20
     real(kind=double),parameter :: UP = 1.0d0 !used in sign() function
     real(kind=double) :: cfl !global CFL number
     real(kind=double) :: dt !global time step
@@ -92,8 +93,10 @@ module global_data
         real(kind=double) :: rho !density
         real(kind=double) :: T !temperature
         real(kind=double) :: kappa !diffusion coefficient
+        real(kind=double) :: absorbtion_scaled
         !flow flux
         real(kind=double) :: flux !mass flux
+        real(kind=double) :: flux_particle
         real(kind=double),allocatable,dimension(:,:) :: flux_h !flux of distribution function
         real(kind=double),allocatable,dimension(:,:) :: h !distribution function
         real(kind=double),allocatable,dimension(:,:,:) :: sh !slope of distribution function in i and j direction

@@ -92,8 +92,10 @@ module global_data
         real(kind=double) :: rho !density
         real(kind=double) :: T !temperature
         real(kind=double) :: kappa !diffusion coefficient
+        real(kind=double) :: absorbtion_scaled
         !flow flux
         real(kind=double) :: flux !mass flux
+        real(kind=double) :: flux_particle
         real(kind=double),allocatable,dimension(:,:) :: flux_h !flux of distribution function
         real(kind=double),allocatable,dimension(:,:) :: h !distribution function
         real(kind=double),allocatable,dimension(:,:,:) :: sh !slope of distribution function in i and j direction
