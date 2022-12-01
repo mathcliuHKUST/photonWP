@@ -151,6 +151,8 @@ contains
                     !face(i)%kappa=2.0d0*(ctr(face(i)%cell_id(1))%kappa_effective*ctr(face(i)%cell_id(2))%kappa_effective)/&
                     !    sum(ctr(face(i)%cell_id(1:2))%kappa_effective)
                     face(i)%kappa=max(ctr(face(i)%cell_id(1))%kappa_effective,ctr(face(i)%cell_id(2))%kappa_effective)
+                    ! open when pure diffusion
+                    !face(i)%absorbtion_scaled=max(ctr(face(i)%cell_id(1))%absorbtion_scaled,ctr(face(i)%cell_id(2))%absorbtion_scaled)
                     face(i)%kappa=face(i)%kappa*(1.0d0-exp(-dt*face(i)%absorbtion_scaled))
                 endif
             enddo
