@@ -49,46 +49,49 @@ contains
         Tk=ctr(1:cell_number_inner)%T
         rhok=ctr(1:cell_number_inner)%rho
         do i=cell_number_inner+1,cell_number
-            if(ctr(i)%coords(2)>0.5)then
+            if(ctr(i)%group==cell01)then
                 !sigma
-                ctr(i)%absorbtion=min(30.0d0/ctr(i)%T**3.0d0,1.0d8)
+                ctr(i)%absorbtion=2.0d-3
                 !capacity
-                ctr(i)%capacity=3.0d-1
+                ctr(i)%capacity=1.0d-1
                 !kappa=c/3*sigma
                 ctr(i)%kappa=lightspeed/(3.0d0*ctr(i)%absorbtion)
                 !absorbtion_scaled=c*sigma/epsilon^2
                 ctr(i)%absorbtion_scaled=lightspeed*ctr(i)%absorbtion/Kn**2.0d0
                 !capacity_scaled=4acT^3/cv
-                ctr(i)%capacity_scaled=max(4.0d0*radconst*lightspeed*ctr(i)%T**3.0d0/ctr(i)%capacity,1.0d-8)
+                ctr(i)%capacity_scaled=max(4.0d0*radconst*ctr(i)%T**3.0d0/ctr(i)%capacity,1.0d-8)
                 !!effective diffusive coefficient
                 !flux_limiter(i)=(1.0d0-2.0d0/(dt*ctr(i)%absorbtion_scaled)+exp(-dt*ctr(i)%absorbtion_scaled)+&
                 !    2.0d0*exp(-dt*ctr(i)%absorbtion_scaled)/(dt*ctr(i)%absorbtion_scaled))
-                !!UGKWP
+                !!!UGKWP
+                !flux_limiter(i)=(1.0d0-2.0d0/(dt*ctr(i)%absorbtion_scaled)+exp(-dt*ctr(i)%absorbtion_scaled)+&
+                !                2.0d0*exp(-dt*ctr(i)%absorbtion_scaled)/(dt*ctr(i)%absorbtion_scaled))*&
+                !                (1.0d0-exp(-dt*ctr(i)%absorbtion_scaled))
+                !ctr(i)%kappa_effective=ctr(i)%kappa*flux_limiter(i)
+                ctr(i)%kappa_effective=ctr(i)%kappa
+            elseif(ctr(i)%group==cell02)then
+                !sigma
+                ctr(i)%absorbtion=2.0d-3
+                !capacity
+                ctr(i)%capacity=1.0d-1
+                !kappa=c/3*sigma
+                ctr(i)%kappa=lightspeed/(3.0d0*ctr(i)%absorbtion)
+                !absorbtion_scaled=c*sigma/epsilon^2
+                ctr(i)%absorbtion_scaled=lightspeed*ctr(i)%absorbtion/Kn**2.0d0
+                !capacity_scaled=4acT^3/cv
+                ctr(i)%capacity_scaled=max(4.0d0*radconst*ctr(i)%T**3.0d0/ctr(i)%capacity,1.0d-8)
+                !!effective diffusive coefficient
+                !flux_limiter(i)=(1.0d0-2.0d0/(dt*ctr(i)%absorbtion_scaled)+exp(-dt*ctr(i)%absorbtion_scaled)+&
+                !    2.0d0*exp(-dt*ctr(i)%absorbtion_scaled)/(dt*ctr(i)%absorbtion_scaled))
+                !!!UGKWP
                 !flux_limiter(i)=(1.0d0-2.0d0/(dt*ctr(i)%absorbtion_scaled)+exp(-dt*ctr(i)%absorbtion_scaled)+&
                 !                2.0d0*exp(-dt*ctr(i)%absorbtion_scaled)/(dt*ctr(i)%absorbtion_scaled))*&
                 !                (1.0d0-exp(-dt*ctr(i)%absorbtion_scaled))
                 !ctr(i)%kappa_effective=ctr(i)%kappa*flux_limiter(i)
                 ctr(i)%kappa_effective=ctr(i)%kappa
             else
-                !sigma
-                ctr(i)%absorbtion=min(30.0d0/ctr(i)%T**3.0d0,1.0d8)
-                !capacity
-                ctr(i)%capacity=3.0d-1
-                !kappa=ac/3*sigma
-                ctr(i)%kappa=lightspeed/(3.0d0*ctr(i)%absorbtion)
-                !absorbtion_scaled=c*sigma/epsilon^2
-                ctr(i)%absorbtion_scaled=lightspeed*ctr(i)%absorbtion/Kn**2.0d0
-                !capacity_scaled=4acT^3/cv
-                ctr(i)%capacity_scaled=max(4.0d0*radconst*lightspeed*ctr(i)%T**3.0d0/ctr(i)%capacity,1.0d-8)
-                !!effective diffusive coefficient
-                !flux_limiter(i)=(1.0d0-2.0d0/(dt*ctr(i)%absorbtion_scaled)+exp(-dt*ctr(i)%absorbtion_scaled)+&
-                !    2.0d0*exp(-dt*ctr(i)%absorbtion_scaled)/(dt*ctr(i)%absorbtion_scaled))
-                !!UGKWP
-                !flux_limiter(i)=(1.0d0-2.0d0/(dt*ctr(i)%absorbtion_scaled)+exp(-dt*ctr(i)%absorbtion_scaled)+&
-                !                2.0d0*exp(-dt*ctr(i)%absorbtion_scaled)/(dt*ctr(i)%absorbtion_scaled))*&
-                !                (1.0d0-exp(-dt*ctr(i)%absorbtion_scaled))
-                !ctr(i)%kappa_effective=ctr(i)%kappa*flux_limiter(i)
-                ctr(i)%kappa_effective=ctr(i)%kappa
+                write(*,*) "error: ghost cell group ..."
+                pause
             endif
         enddo
 
@@ -103,19 +106,19 @@ contains
             do i=1,cell_number_inner
                 if(ctr(i)%group==cell11 .or. ctr(i)%group==cell13)then
                     !sigma
-                    ctr(i)%absorbtion=min(30.0d0/Tk(i)**3.0d0,1.0d8)
+                    ctr(i)%absorbtion=2.0d-3
                     !capacity
-                    ctr(i)%capacity=3.0d-1
-                    !kappa=ac/3*sigma
+                    ctr(i)%capacity=1.0d-1
+                    !kappa=c/3*sigma
                     ctr(i)%kappa=lightspeed/(3.0d0*ctr(i)%absorbtion)
                     !absorbtion_scaled=c*sigma/epsilon^2
                     ctr(i)%absorbtion_scaled=lightspeed*ctr(i)%absorbtion/Kn**2.0d0
                     !capacity_scaled=4acT^3/cv
-                    ctr(i)%capacity_scaled=max(4.0d0*radconst*lightspeed*Tk(i)**3.0d0/ctr(i)%capacity,1.0d-8)
+                    ctr(i)%capacity_scaled=max(4.0d0*radconst*Tk(i)**3.0d0/ctr(i)%capacity,1.0d-8)
                     !!effective diffusive coefficient
                     !flux_limiter(i)=(1.0d0-2.0d0/(dt*ctr(i)%absorbtion_scaled)+exp(-dt*ctr(i)%absorbtion_scaled)+&
                     !    2.0d0*exp(-dt*ctr(i)%absorbtion_scaled)/(dt*ctr(i)%absorbtion_scaled))
-                    !!UGKWP
+                    !!!UGKWP
                     !flux_limiter(i)=(1.0d0-2.0d0/(dt*ctr(i)%absorbtion_scaled)+exp(-dt*ctr(i)%absorbtion_scaled)+&
                     !                2.0d0*exp(-dt*ctr(i)%absorbtion_scaled)/(dt*ctr(i)%absorbtion_scaled))*&
                     !                (1.0d0-exp(-dt*ctr(i)%absorbtion_scaled))
@@ -123,26 +126,26 @@ contains
                     ctr(i)%kappa_effective=ctr(i)%kappa
                 elseif(ctr(i)%group==cell12 .or. ctr(i)%group==cell14)then
                     !sigma
-                    ctr(i)%absorbtion=min(30.0d0/Tk(i)**3.0d0,1.0d8)
+                    ctr(i)%absorbtion=2.0d4
                     !capacity
-                    ctr(i)%capacity=3.0d-1
-                    !kappa=ac/3*sigma
+                    ctr(i)%capacity=1.0d-1
+                    !kappa=c/3*sigma
                     ctr(i)%kappa=lightspeed/(3.0d0*ctr(i)%absorbtion)
                     !absorbtion_scaled=c*sigma/epsilon^2
                     ctr(i)%absorbtion_scaled=lightspeed*ctr(i)%absorbtion/Kn**2.0d0
                     !capacity_scaled=4acT^3/cv
-                    ctr(i)%capacity_scaled=max(4.0d0*radconst*lightspeed*Tk(i)**3.0d0/ctr(i)%capacity,1.0d-8)
+                    ctr(i)%capacity_scaled=max(4.0d0*radconst*Tk(i)**3.0d0/ctr(i)%capacity,1.0d-8)
                     !!effective diffusive coefficient
                     !flux_limiter(i)=(1.0d0-2.0d0/(dt*ctr(i)%absorbtion_scaled)+exp(-dt*ctr(i)%absorbtion_scaled)+&
                     !    2.0d0*exp(-dt*ctr(i)%absorbtion_scaled)/(dt*ctr(i)%absorbtion_scaled))
-                    !!UGKWP
+                    !!!UGKWP
                     !flux_limiter(i)=(1.0d0-2.0d0/(dt*ctr(i)%absorbtion_scaled)+exp(-dt*ctr(i)%absorbtion_scaled)+&
                     !                2.0d0*exp(-dt*ctr(i)%absorbtion_scaled)/(dt*ctr(i)%absorbtion_scaled))*&
                     !                (1.0d0-exp(-dt*ctr(i)%absorbtion_scaled))
                     !ctr(i)%kappa_effective=ctr(i)%kappa*flux_limiter(i)
                     ctr(i)%kappa_effective=ctr(i)%kappa
                 else
-                    write(*,*) "source iteration cross section error..."
+                    write(*,*) "error: source iteration cross section error..."
                     pause
                 endif
             enddo
@@ -151,9 +154,6 @@ contains
                     !face(i)%kappa=2.0d0*(ctr(face(i)%cell_id(1))%kappa_effective*ctr(face(i)%cell_id(2))%kappa_effective)/&
                     !    sum(ctr(face(i)%cell_id(1:2))%kappa_effective)
                     face(i)%kappa=max(ctr(face(i)%cell_id(1))%kappa_effective,ctr(face(i)%cell_id(2))%kappa_effective)
-                    ! open when pure diffusion
-                    !face(i)%absorbtion_scaled=max(ctr(face(i)%cell_id(1))%absorbtion_scaled,ctr(face(i)%cell_id(2))%absorbtion_scaled)
-                    !face(i)%kappa=face(i)%kappa*(1.0d0-exp(-dt*face(i)%absorbtion_scaled))
                 endif
             enddo
 
@@ -161,7 +161,6 @@ contains
             !>solve linear equation
             !-------------------------------------
             !load matrix
-            !write(*,*) "loading matrix..."
             call loadmatrix(matrix_implicit,matrix_explicit,cell_number_inner,cell_number)
             !right hand side
             RHS(1:cell_number)=ctr(1:cell_number)%rho
@@ -185,7 +184,6 @@ contains
             leading_dimA=cell_number_inner*2
             leading_dimB=cell_number_inner*2
             matrix_out=matrix_implicit
-            !write(*,*) "solving matrix..."
             ! gauss elimination
             call dgesv(matrix_dim,NRHS,matrix_out,leading_dimA,IPIV,solution,leading_dimB,INFO)
             if(INFO/=0)then
@@ -245,7 +243,7 @@ contains
         matrix_implicit=0
         matrix_explicit=0
 
-        !time derivative
+        !> time derivative
         do i=1,cell_number_inner
             matrix_implicit(i,i)=matrix_implicit(i,i)+1.0d0
             matrix_explicit(i,i)=matrix_explicit(i,i)+1.0d0
@@ -255,35 +253,37 @@ contains
             matrix_explicit(i,i+(cell_number-cell_number_inner))=matrix_explicit(i,i+(cell_number-cell_number_inner))+1.0d0
         enddo
 
-        !source term
-        do i=1,cell_number_inner
-            matrix_implicit(i,i)=matrix_implicit(i,i)+dt*ctr(i)%absorbtion_scaled
-            matrix_implicit(i,i+cell_number_inner)=matrix_implicit(i,i+cell_number_inner)-&
-                dt*ctr(i)%absorbtion_scaled
-        enddo
-        do i=cell_number_inner+1,cell_number_inner*2
-            matrix_implicit(i,i)=matrix_implicit(i,i)+dt*ctr(i-cell_number_inner)%absorbtion_scaled*ctr(i-cell_number_inner)%capacity_scaled
-            matrix_implicit(i,i-cell_number_inner)=matrix_implicit(i,i-cell_number_inner)-&
-                dt*ctr(i-cell_number_inner)%absorbtion_scaled*ctr(i-cell_number_inner)%capacity_scaled
-        enddo
+        !!> source term
+        !do i=1,cell_number_inner
+        !    matrix_implicit(i,i)=matrix_implicit(i,i)+&
+        !        dt*ctr(i)%absorbtion_scaled
+        !    matrix_implicit(i,i+cell_number_inner)=matrix_implicit(i,i+cell_number_inner)-&
+        !        dt*ctr(i)%absorbtion_scaled
+        !enddo
+        !do i=cell_number_inner+1,cell_number_inner*2
+        !    matrix_implicit(i,i)=matrix_implicit(i,i)+&
+        !        dt*ctr(i-cell_number_inner)%absorbtion_scaled*ctr(i-cell_number_inner)%capacity_scaled
+        !    matrix_implicit(i,i-cell_number_inner)=matrix_implicit(i,i-cell_number_inner)-&
+        !        dt*ctr(i-cell_number_inner)%absorbtion_scaled*ctr(i-cell_number_inner)%capacity_scaled
+        !enddo
 
+        !> diffusive flux
         do i=1,cell_number_inner
-            !diffusive flux
             do j=1,ctr(i)%face_number
                 face_id=ctr(i)%face_id(j)
-                if(face(face_id)%cell_id(1)==i)then !inner normal direction
+                if(face(face_id)%cell_id(1)==i)then ! inner norm
                     !nomal derivative
                     cell_id=face(face_id)%cell_id(2)
                     if(cell_id/=0)then
-                        matrix_implicit(i,i+cell_number_inner)=matrix_implicit(i,i+cell_number_inner)+&
-                            dt/ctr(i)%area*face(face_id)%length*face(face_id)%weight(1)*face(face_id)%kappa
+                        matrix_implicit(i,i)=matrix_implicit(i,i)+&
+                            dt/ctr(i)%volume*face(face_id)%area*face(face_id)%weight(1)*face(face_id)%kappa
                         if(ctr(cell_id)%group==cell11 .or. ctr(cell_id)%group==cell12 .or.&
                            ctr(cell_id)%group==cell13 .or. ctr(cell_id)%group==cell14)then
-                            matrix_implicit(i,cell_id+cell_number_inner)=matrix_implicit(i,cell_id+cell_number_inner)-&
-                                dt/ctr(i)%area*face(face_id)%length*face(face_id)%weight(1)*face(face_id)%kappa
+                            matrix_implicit(i,cell_id)=matrix_implicit(i,cell_id)-&
+                                dt/ctr(i)%volume*face(face_id)%area*face(face_id)%weight(1)*face(face_id)%kappa
                         else
-                            matrix_explicit(i,cell_id+cell_number)=matrix_explicit(i,cell_id+cell_number)+&
-                                dt/ctr(i)%area*face(face_id)%length*face(face_id)%weight(1)*face(face_id)%kappa
+                            matrix_explicit(i,cell_id)=matrix_explicit(i,cell_id)+&
+                                dt/ctr(i)%volume*face(face_id)%area*face(face_id)%weight(1)*face(face_id)%kappa
                         endif
                     endif
                     !tangent derivative
@@ -293,11 +293,11 @@ contains
                         cell_id=node(node_id)%cell_id(k)
                         if(ctr(cell_id)%group==cell11 .or. ctr(cell_id)%group==cell12 .or.&
                            ctr(cell_id)%group==cell13 .or. ctr(cell_id)%group==cell14)then
-                            matrix_implicit(i,cell_id+cell_number_inner)=matrix_implicit(i,cell_id+cell_number_inner)+&
-                                dt/ctr(i)%area*face(face_id)%length*face(face_id)%weight(2)*face(face_id)%kappa/node(node_id)%cell_number
+                            matrix_implicit(i,cell_id)=matrix_implicit(i,cell_id)+&
+                                dt/ctr(i)%volume*face(face_id)%area*face(face_id)%weight(2)*face(face_id)%kappa/node(node_id)%cell_number
                         else
-                            matrix_explicit(i,cell_id+cell_number)=matrix_explicit(i,cell_id+cell_number)-&
-                                dt/ctr(i)%area*face(face_id)%length*face(face_id)%weight(2)*face(face_id)%kappa/node(node_id)%cell_number
+                            matrix_explicit(i,cell_id)=matrix_explicit(i,cell_id)-&
+                                dt/ctr(i)%volume*face(face_id)%area*face(face_id)%weight(2)*face(face_id)%kappa/node(node_id)%cell_number
                         endif
                     enddo
                     node_id=face(face_id)%node_id(2)
@@ -305,26 +305,52 @@ contains
                         cell_id=node(node_id)%cell_id(k)
                         if(ctr(cell_id)%group==cell11 .or. ctr(cell_id)%group==cell12 .or.&
                            ctr(cell_id)%group==cell13 .or. ctr(cell_id)%group==cell14)then
-                            matrix_implicit(i,cell_id+cell_number_inner)=matrix_implicit(i,cell_id+cell_number_inner)-&
-                                dt/ctr(i)%area*face(face_id)%length*face(face_id)%weight(2)*face(face_id)%kappa/node(node_id)%cell_number
+                            matrix_implicit(i,cell_id)=matrix_implicit(i,cell_id)-&
+                                dt/ctr(i)%volume*face(face_id)%area*face(face_id)%weight(2)*face(face_id)%kappa/node(node_id)%cell_number
                         else
-                            matrix_explicit(i,cell_id+cell_number)=matrix_explicit(i,cell_id+cell_number)+&
-                                dt/ctr(i)%area*face(face_id)%length*face(face_id)%weight(2)*face(face_id)%kappa/node(node_id)%cell_number
+                            matrix_explicit(i,cell_id)=matrix_explicit(i,cell_id)+&
+                                dt/ctr(i)%volume*face(face_id)%area*face(face_id)%weight(2)*face(face_id)%kappa/node(node_id)%cell_number
                         endif
                     enddo
-                else !> outer normal
+                    !tangent derivative
+                    !> node1-node3
+                    node_id=face(face_id)%node_id(1)
+                    do k=1,node(node_id)%cell_number
+                        cell_id=node(node_id)%cell_id(k)
+                        if(ctr(cell_id)%group==cell11 .or. ctr(cell_id)%group==cell12 .or.&
+                           ctr(cell_id)%group==cell13 .or. ctr(cell_id)%group==cell14)then
+                            matrix_implicit(i,cell_id)=matrix_implicit(i,cell_id)+&
+                                dt/ctr(i)%volume*face(face_id)%area*face(face_id)%weight(3)*face(face_id)%kappa/node(node_id)%cell_number
+                        else
+                            matrix_explicit(i,cell_id)=matrix_explicit(i,cell_id)-&
+                                dt/ctr(i)%volume*face(face_id)%area*face(face_id)%weight(3)*face(face_id)%kappa/node(node_id)%cell_number
+                        endif
+                    enddo
+                    node_id=face(face_id)%node_id(3)
+                    do k=1,node(node_id)%cell_number
+                        cell_id=node(node_id)%cell_id(k)
+                        if(ctr(cell_id)%group==cell11 .or. ctr(cell_id)%group==cell12 .or.&
+                           ctr(cell_id)%group==cell13 .or. ctr(cell_id)%group==cell14)then
+                            matrix_implicit(i,cell_id)=matrix_implicit(i,cell_id)-&
+                                dt/ctr(i)%volume*face(face_id)%area*face(face_id)%weight(3)*face(face_id)%kappa/node(node_id)%cell_number
+                        else
+                            matrix_explicit(i,cell_id)=matrix_explicit(i,cell_id)+&
+                                dt/ctr(i)%volume*face(face_id)%area*face(face_id)%weight(3)*face(face_id)%kappa/node(node_id)%cell_number
+                        endif
+                    enddo
+                else !> outer norm
                     !nomal derivative
                     cell_id=face(face_id)%cell_id(1)
                     if(cell_id/=0)then
-                        matrix_implicit(i,i+cell_number_inner)=matrix_implicit(i,i+cell_number_inner)+&
-                            dt/ctr(i)%area*face(face_id)%length*face(face_id)%weight(1)*face(face_id)%kappa
+                        matrix_implicit(i,i)=matrix_implicit(i,i)+&
+                            dt/ctr(i)%volume*face(face_id)%area*face(face_id)%weight(1)*face(face_id)%kappa
                         if(ctr(cell_id)%group==cell11 .or. ctr(cell_id)%group==cell12 .or.&
                            ctr(cell_id)%group==cell13 .or. ctr(cell_id)%group==cell14)then
-                            matrix_implicit(i,cell_id+cell_number_inner)=matrix_implicit(i,cell_id+cell_number_inner)-&
-                                dt/ctr(i)%area*face(face_id)%length*face(face_id)%weight(1)*face(face_id)%kappa
+                            matrix_implicit(i,cell_id)=matrix_implicit(i,cell_id)-&
+                                dt/ctr(i)%volume*face(face_id)%area*face(face_id)%weight(1)*face(face_id)%kappa
                         else
-                            matrix_explicit(i,cell_id+cell_number)=matrix_explicit(i,cell_id+cell_number)+&
-                                dt/ctr(i)%area*face(face_id)%length*face(face_id)%weight(1)*face(face_id)%kappa
+                            matrix_explicit(i,cell_id)=matrix_explicit(i,cell_id)+&
+                                dt/ctr(i)%volume*face(face_id)%area*face(face_id)%weight(1)*face(face_id)%kappa
                         endif
                     endif
                     !tangent derivative
@@ -334,11 +360,11 @@ contains
                         cell_id=node(node_id)%cell_id(k)
                         if(ctr(cell_id)%group==cell11 .or. ctr(cell_id)%group==cell12 .or.&
                            ctr(cell_id)%group==cell13 .or. ctr(cell_id)%group==cell14)then
-                            matrix_implicit(i,cell_id+cell_number_inner)=matrix_implicit(i,cell_id+cell_number_inner)-&
-                                dt/ctr(i)%area*face(face_id)%length*face(face_id)%weight(2)*face(face_id)%kappa/node(node_id)%cell_number
+                            matrix_implicit(i,cell_id)=matrix_implicit(i,cell_id)-&
+                                dt/ctr(i)%volume*face(face_id)%area*face(face_id)%weight(2)*face(face_id)%kappa/node(node_id)%cell_number
                         else
-                            matrix_explicit(i,cell_id+cell_number)=matrix_explicit(i,cell_id+cell_number)+&
-                                dt/ctr(i)%area*face(face_id)%length*face(face_id)%weight(2)*face(face_id)%kappa/node(node_id)%cell_number
+                            matrix_explicit(i,cell_id)=matrix_explicit(i,cell_id)+&
+                                dt/ctr(i)%volume*face(face_id)%area*face(face_id)%weight(2)*face(face_id)%kappa/node(node_id)%cell_number
                         endif
                     enddo
                     node_id=face(face_id)%node_id(2)
@@ -346,11 +372,37 @@ contains
                         cell_id=node(node_id)%cell_id(k)
                         if(ctr(cell_id)%group==cell11 .or. ctr(cell_id)%group==cell12 .or.&
                            ctr(cell_id)%group==cell13 .or. ctr(cell_id)%group==cell14)then
-                            matrix_implicit(i,cell_id+cell_number_inner)=matrix_implicit(i,cell_id+cell_number_inner)+&
-                                dt/ctr(i)%area*face(face_id)%length*face(face_id)%weight(2)*face(face_id)%kappa/node(node_id)%cell_number
+                            matrix_implicit(i,cell_id)=matrix_implicit(i,cell_id)+&
+                                dt/ctr(i)%volume*face(face_id)%area*face(face_id)%weight(2)*face(face_id)%kappa/node(node_id)%cell_number
                         else
-                            matrix_explicit(i,cell_id+cell_number)=matrix_explicit(i,cell_id+cell_number)-&
-                                dt/ctr(i)%area*face(face_id)%length*face(face_id)%weight(2)*face(face_id)%kappa/node(node_id)%cell_number
+                            matrix_explicit(i,cell_id)=matrix_explicit(i,cell_id)-&
+                                dt/ctr(i)%volume*face(face_id)%area*face(face_id)%weight(2)*face(face_id)%kappa/node(node_id)%cell_number
+                        endif
+                    enddo
+                    !tangent derivative
+                    !> node1-node3
+                    node_id=face(face_id)%node_id(1)
+                    do k=1,node(node_id)%cell_number
+                        cell_id=node(node_id)%cell_id(k)
+                        if(ctr(cell_id)%group==cell11 .or. ctr(cell_id)%group==cell12 .or.&
+                           ctr(cell_id)%group==cell13 .or. ctr(cell_id)%group==cell14)then
+                            matrix_implicit(i,cell_id)=matrix_implicit(i,cell_id)-&
+                                dt/ctr(i)%volume*face(face_id)%area*face(face_id)%weight(3)*face(face_id)%kappa/node(node_id)%cell_number
+                        else
+                            matrix_explicit(i,cell_id)=matrix_explicit(i,cell_id)+&
+                                dt/ctr(i)%volume*face(face_id)%area*face(face_id)%weight(3)*face(face_id)%kappa/node(node_id)%cell_number
+                        endif
+                    enddo
+                    node_id=face(face_id)%node_id(3)
+                    do k=1,node(node_id)%cell_number
+                        cell_id=node(node_id)%cell_id(k)
+                        if(ctr(cell_id)%group==cell11 .or. ctr(cell_id)%group==cell12 .or.&
+                           ctr(cell_id)%group==cell13 .or. ctr(cell_id)%group==cell14)then
+                            matrix_implicit(i,cell_id)=matrix_implicit(i,cell_id)+&
+                                dt/ctr(i)%volume*face(face_id)%area*face(face_id)%weight(3)*face(face_id)%kappa/node(node_id)%cell_number
+                        else
+                            matrix_explicit(i,cell_id)=matrix_explicit(i,cell_id)-&
+                                dt/ctr(i)%volume*face(face_id)%area*face(face_id)%weight(3)*face(face_id)%kappa/node(node_id)%cell_number
                         endif
                     enddo
                 endif

@@ -30,9 +30,9 @@ contains
         method_interp = SECOND_ORDER !second order interpolation
 
         call init_geometry() !initialize the geometry
-        call init_velocity() !initialize discrete velocity space
+        !call init_velocity() !initialize discrete velocity space
         call init_flow_field() !set the initial condition
-        call init_particle() !initialize discrete velocity space
+        !call init_particle() !initialize discrete velocity space
     end subroutine init
 
     !--------------------------------------------------
@@ -459,7 +459,7 @@ contains
                 ! sec(theta_ij)/|cj-ci|
                 face(i)%weight(1)=1.0d0/tempcosine/sqrt(sum((ctr(face(i)%cell_id(1))%coords(1:2)-ctr(face(i)%cell_id(2))%coords(1:2))**2.0d0))
                 !tan(theta_ij)/|vj-vi|
-                face(i)%weight(2)=sum((face(i)%norm-center/tempcosine)*tangent)
+                face(i)%weight(2)=sum((face(i)%norm-center/tempcosine)*tangent)/face(i)%length
                 !write(*,*) (normal-center/tempcosine)/sqrt(sum((normal-center/tempcosine)**2.0d0)),tangent
                 if(((face(i)%norm(1)-center(1)/tempcosine)*tangent(2)-(face(i)%norm(2)-center(2)/tempcosine)*tangent(1))>1.0d-10)then
                     write(*,*) "error in weight 2: not parallel", &

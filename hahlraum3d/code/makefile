@@ -1,7 +1,7 @@
 ## subroutine and function source files
 SRC_FILES = 
 ## module files
-MDL_FILES = globaldata.f90 tools.f90  io.f90 macroscopic.f90 microscopic.f90 microscopicSn.f90
+MDL_FILES = mkl_spblas.f90 globaldata.f90 tools.f90  io.f90 macroscopic.f90 microscopic.f90 microscopicSn.f90
 OBJS = ${SRC_FILES:.f90=.o}
 MOD = ${MDL_FILES:.f90=.o}
 ## main file
