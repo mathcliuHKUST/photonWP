@@ -16,15 +16,22 @@ module global_data
     real(kind=double),parameter :: maxnumber=1.0d20
     real(kind=double),parameter :: UP = 1.0d0 !used in sign() function
     real(kind=double) :: cfl !global CFL number
-    real(kind=double) :: dt !global time step
+    real(kind=double) :: dt,dt_ex !global time step
     real(kind=double) :: sim_time !current simulation time
     real(kind=double) :: end_time !current simulation time
     integer :: iteration !iteration
     integer :: method_scheme ! 1 wp, 2 sn
     integer :: method_interp !interpolation method
     integer :: method_output !output as cell centered or point value
+    integer :: implicit_factor
     character(100) :: inputfilename
     character(100) :: outputfilename
+
+    !--------------------------------------------------
+    !probes
+    !--------------------------------------------------
+    integer(kind=double) :: probe(5)
+    real(kind=double) :: probe_x(5),probe_y(5)
 
     !--------------------------------------------------
     !gas properties
@@ -39,8 +46,9 @@ module global_data
     !macros for a readable code
     !--------------------------------------------------
     !file name
-    character(len=20),parameter :: HSTFILENAME = "photonwp.hst" !history file name
-    character(len=20),parameter :: RSTFILENAME = "photonwp.plt" !result file name
+    character(len=20),parameter :: HSTFILENAME   = "photonwp.hst" !history file name
+    character(len=20),parameter :: RSTFILENAME   = "photonwp.plt" !result file name
+    character(len=20),parameter :: PROBEFILENAME = "probe.plt" !result file name
     !direction
     integer,parameter :: IDIRC = 1 !i direction
     integer,parameter :: JDIRC = 2 !j direction
@@ -48,8 +56,9 @@ module global_data
     integer,parameter :: RN = 1 !no frame rotation
     integer,parameter :: RY =-1 !with frame rotation
     !I/O
-    integer,parameter :: HSTFILE = 20 !history file ID
-    integer,parameter :: RSTFILE = 21 !result file ID
+    integer,parameter :: HSTFILE   = 20 !history file ID
+    integer,parameter :: RSTFILE   = 21 !result file ID
+    integer,parameter :: PROBEFILE = 22 !history file ID
     !method
     integer,parameter :: UGKWP = 1
     integer,parameter :: SN    = 2

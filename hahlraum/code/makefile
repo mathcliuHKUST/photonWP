@@ -10,7 +10,7 @@ BIN = main
 
 # compiler
 F90 = mpiifort
-FFLAGS = -qopenmp -qmkl
+FFLAGS = -qmkl -qopenmp
 
 ##顺序非常重要，决定了依赖关系
 OBJECTS =$(MOD) $(OBJS) $(BIN).o
@@ -27,4 +27,4 @@ $(MOD): $(MDL_FILES)
 $(BIN).o: $(SOURCES)
 	$(F90) $(FFLAGS) -c $(BIN).f90
 clean:
-	rm -f *.o *.mod *.out *.plt $(BIN)
+	rm -f *.plt *.o *.mod *.out $(BIN)

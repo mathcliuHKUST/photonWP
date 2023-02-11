@@ -35,13 +35,7 @@ contains
         !$omp do
         do i=1,face_number
             if(face(i)%group==face1)then
-                if(ctr(face(i)%cell_id(1))%group==cell01 .and. ctr(face(i)%cell_id(2))%group==cell01)then
-                    face(i)%flux_h=0
-                elseif(ctr(face(i)%cell_id(1))%group==cell02 .and. ctr(face(i)%cell_id(2))%group==cell02)then
-                    face(i)%flux_h=0
-                else
-                    call calc_flux(face(i))
-                endif
+                call calc_flux(face(i))
             elseif(face(i)%group==face0)then
                 call calc_flux_boundary(face(i))
             endif
@@ -55,6 +49,40 @@ contains
     !--------------------------------------------------
     subroutine update_flux_sn()
         integer :: i,j
+
+        !----------------------------------------------------------
+        !> calculate cross section
+        !----------------------------------------------------------
+        do i=1,cell_number
+            if(ctr(i)%group==cell01 .or. ctr(i)%group==cell02)then
+                if(ctr(i)%coords(2)>0.5)then
+                    ctr(i)%absorbtion=2.0d3
+                    ctr(i)%absorbtion_scaled=lightspeed*ctr(i)%absorbtion/Kn**2.0d0
+                else
+                    ctr(i)%absorbtion=2.0d-1
+                    ctr(i)%absorbtion_scaled=lightspeed*ctr(i)%absorbtion/Kn**2.0d0
+                endif
+            else
+                if(ctr(i)%group==cell11 .or. ctr(i)%group==cell13)then
+                    ctr(i)%absorbtion=2.0d-1
+                    ctr(i)%absorbtion_scaled=lightspeed*ctr(i)%absorbtion/Kn**2.0d0
+                elseif(ctr(i)%group==cell12 .or. ctr(i)%group==cell14)then
+                    ctr(i)%absorbtion=2.0d3
+                    ctr(i)%absorbtion_scaled=lightspeed*ctr(i)%absorbtion/Kn**2.0d0
+                endif
+            endif
+        enddo
+        
+        do i=1,face_number
+            if(face(i)%group==face1)then
+                !face(i)%kappa=2.0d0*(ctr(face(i)%cell_id(1))%kappa_effective*ctr(face(i)%cell_id(2))%kappa_effective)/&
+                !    sum(ctr(face(i)%cell_id(1:2))%kappa_effective)
+                face(i)%absorbtion_scaled=min(ctr(face(i)%cell_id(1))%absorbtion_scaled,ctr(face(i)%cell_id(2))%absorbtion_scaled)
+            else
+                face(i)%absorbtion_scaled=ctr(face(i)%cell_id(1))%absorbtion_scaled
+            endif
+            face(i)%flux_h=face(i)%flux_h*exp(-dt*face(i)%absorbtion_scaled)
+        enddo
 
         !$omp parallel
         !$omp do
@@ -105,8 +133,9 @@ contains
         type(cell_type),intent(inout) :: cell
         type(face_type) :: face_local(3)
         integer,intent(in) :: cell_id
+        real(kind=double) :: temp_rho
         integer :: direction(3)
-        integer :: i
+        integer :: i,j
 
         do i=1,3
             face_local(i)=face(cell%face_id(i))
@@ -120,8 +149,14 @@ contains
         enddo
         !update distribution function
         cell%h=cell%h+(direction(1)*face_local(1)%flux_h+direction(2)*face_local(2)%flux_h+direction(3)*face_local(3)%flux_h)/cell%area
-        !update radiative energy
         cell%rho=sum(weight*cell%h)
+        do i=1,unum
+            do j=1,vnum
+                cell%h(i,j)=max(cell%h(i,j),0.0d0)
+            enddo
+        enddo
+        temp_rho=sum(weight*cell%h)
+        cell%h=cell%h*cell%rho/temp_rho
     end subroutine update_flux
 
     !--------------------------------------------------
@@ -132,7 +167,7 @@ contains
         real(kind=double),dimension(0:4):: coefficient
         complex(kind=double),dimension(0:3):: solution
         real(kind=double) :: realpart,absimaginepart
-        real(kind=double) :: temp_alpha,temp_beta
+        real(kind=double) :: temp_alpha,temp_beta,temp_rho
         integer :: i
 
         !temp coefficients
@@ -158,7 +193,9 @@ contains
 
         !update h
         !cell%h=1.0d0/(1.0d0+temp_alpha)*(cell%h+temp_alpha*radconst*lightspeed/(4.0d0*pi)*cell%T**4.0d0)
-        cell%h=exp(-temp_alpha)*cell%h+(1-exp(-temp_alpha))*radconst*lightspeed*cell%T**4.0d0/(4.0d0*pi)
+        cell%h=exp(-temp_alpha)*abs(cell%h)+(1-exp(-temp_alpha))*cell%rho/(4.0d0*pi)
+        temp_rho=sum(weight*cell%h)
+        cell%h=cell%h*cell%rho/temp_rho
     end subroutine update_source
 
     !--------------------------------------------------

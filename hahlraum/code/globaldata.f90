@@ -13,17 +13,25 @@ module global_data
     !--------------------------------------------------
     real(kind=double),parameter :: PI = 4.0d0*atan(1.0d0) !Pi
     real(kind=double),parameter :: SMV = tiny(real(1.0,8)) !small value to avoid 0/0
+    real(kind=double),parameter :: maxnumber=1.0d20
     real(kind=double),parameter :: UP = 1.0d0 !used in sign() function
     real(kind=double) :: cfl !global CFL number
-    real(kind=double) :: dt !global time step
+    real(kind=double) :: dt,dt_ex !global time step
     real(kind=double) :: sim_time !current simulation time
     real(kind=double) :: end_time !current simulation time
     integer :: iteration !iteration
     integer :: method_scheme ! 1 wp, 2 sn
     integer :: method_interp !interpolation method
     integer :: method_output !output as cell centered or point value
+    integer :: implicit_factor
     character(100) :: inputfilename
     character(100) :: outputfilename
+
+    !--------------------------------------------------
+    !probes
+    !--------------------------------------------------
+    integer(kind=double) :: probe(5)
+    real(kind=double) :: probe_x(5),probe_y(5)
 
     !--------------------------------------------------
     !gas properties
@@ -38,8 +46,9 @@ module global_data
     !macros for a readable code
     !--------------------------------------------------
     !file name
-    character(len=20),parameter :: HSTFILENAME = "photonwp.hst" !history file name
-    character(len=20),parameter :: RSTFILENAME = "photonwp.plt" !result file name
+    character(len=20),parameter :: HSTFILENAME   = "photonET.plt" !history file name
+    character(len=20),parameter :: RSTFILENAME   = "photonwp.plt" !result file name
+    character(len=20),parameter :: PROBEFILENAME = "probe.plt" !result file name
     !direction
     integer,parameter :: IDIRC = 1 !i direction
     integer,parameter :: JDIRC = 2 !j direction
@@ -47,8 +56,9 @@ module global_data
     integer,parameter :: RN = 1 !no frame rotation
     integer,parameter :: RY =-1 !with frame rotation
     !I/O
-    integer,parameter :: HSTFILE = 20 !history file ID
-    integer,parameter :: RSTFILE = 21 !result file ID
+    integer,parameter :: HSTFILE   = 20 !history file ID
+    integer,parameter :: RSTFILE   = 21 !result file ID
+    integer,parameter :: PROBEFILE = 22 !history file ID
     !method
     integer,parameter :: UGKWP = 1
     integer,parameter :: SN    = 2
@@ -92,8 +102,10 @@ module global_data
         real(kind=double) :: rho !density
         real(kind=double) :: T !temperature
         real(kind=double) :: kappa !diffusion coefficient
+        real(kind=double) :: absorbtion_scaled
         !flow flux
         real(kind=double) :: flux !mass flux
+        real(kind=double) :: flux_particle
         real(kind=double),allocatable,dimension(:,:) :: flux_h !flux of distribution function
         real(kind=double),allocatable,dimension(:,:) :: h !distribution function
         real(kind=double),allocatable,dimension(:,:,:) :: sh !slope of distribution function in i and j direction
